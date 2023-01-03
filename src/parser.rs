@@ -1,4 +1,6 @@
-fn split_rows(text: &str, delimiter: &str) -> Vec<String> {
+// (rob) This is a transliteration of the code in csv.py - this should be carcinized 🦀
+
+fn parse_rows(text: &str, delimiter: &str) -> Vec<String> {
     let chars = text.chars().collect::<Vec<_>>();
     let mut rows = Vec::new();
 
@@ -6,7 +8,7 @@ fn split_rows(text: &str, delimiter: &str) -> Vec<String> {
     let mut current_selection = String::new();
 
     let mut i = 0usize;
-    while i < text.len() {
+    while i < chars.len() {
         let current_char = chars[i];
 
         // Reached a newline not in quotes
@@ -43,29 +45,80 @@ fn split_rows(text: &str, delimiter: &str) -> Vec<String> {
     rows
 }
 
+fn parse_cells(row: &str, delimiter: &str) -> Vec<String> {
+    let chars = row.chars().collect::<Vec<_>>();
+
+    let mut cells = Vec::new();
+    let mut current_selection = String::new();
+    let mut opened_quote = false;
+
+    let mut i = 0;
+    while i < chars.len() {
+        let current_char = chars[i];
+        let next_char = chars.get(i + 1);
+
+        if current_char.to_string() != delimiter && current_char != '"' {
+            current_selection.push(current_char);
+            i += 1;
+            continue;
+        }
+
+        if let Some(next_char) = next_char {
+            if current_char == '"' && next_char == &'"' {
+                current_selection.push_str("\"\"");
+                i += 2;
+                continue;
+            }
+        }
+
+        if current_char == '"' && (next_char.is_none() || next_char != Some(&'"')) {
+            current_selection.push('"');
+            opened_quote = !opened_quote;
+            i += 1;
+            continue;
+        }
+
+        if current_char.to_string() == delimiter {
+            if opened_quote {
+                current_selection.push(current_char);
+            } else {
+                cells.push(current_selection.clone());
+                current_selection = String::new();
+            }
+
+            i += 1;
+            continue;
+        }
+    }
+
+    cells.push(current_selection);
+
+    cells
+}
+
 #[cfg(test)]
-mod tests {
+mod parse_rows_tests {
     use super::*;
 
     #[test]
     fn test_simple() {
         let input = "test,row\nnext,row\n";
 
-        assert_eq!(split_rows(input, ","), vec!["test,row", "next,row"])
+        assert_eq!(parse_rows(input, ","), vec!["test,row", "next,row"])
     }
 
     #[test]
     fn test_no_trailing_newline() {
         let input = "test,row\nnext,row";
 
-        assert_eq!(split_rows(input, ","), vec!["test,row", "next,row"])
+        assert_eq!(parse_rows(input, ","), vec!["test,row", "next,row"])
     }
 
     #[test]
     fn test_quoted_newline() {
         let input = "test,\"row\n\"\nnext,row";
 
-        assert_eq!(split_rows(input, ","), vec!["test,\"row\n\"", "next,row"])
+        assert_eq!(parse_rows(input, ","), vec!["test,\"row\n\"", "next,row"])
     }
 
     #[test]
@@ -73,8 +126,40 @@ mod tests {
         let input = "test,\"\"\"row\"\"\"\nnext,row";
 
         assert_eq!(
-            split_rows(input, ","),
+            parse_rows(input, ","),
             vec!["test,\"\"\"row\"\"\"", "next,row"]
         )
+    }
+}
+
+#[cfg(test)]
+mod parse_cells_tests {
+    use super::*;
+
+    #[test]
+    fn test_simple() {
+        let input = "test,row";
+        assert_eq!(parse_cells(input, ","), vec!["test", "row"])
+    }
+
+    #[test]
+    fn test_quoted_newline() {
+        let input = "test,\"row\n\"";
+
+        assert_eq!(parse_cells(input, ","), vec!["test", "\"row\n\""])
+    }
+
+    #[test]
+    fn test_quoted_quote() {
+        let input = "test,\"\"\"row\"\"\"";
+
+        assert_eq!(parse_cells(input, ","), vec!["test", "\"\"\"row\"\"\""])
+    }
+
+    #[test]
+    fn test_quoted_delimiter() {
+        let input = "test,\"row,\"";
+
+        assert_eq!(parse_cells(input, ","), vec!["test", "\"row,\""])
     }
 }
