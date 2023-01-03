@@ -1,6 +1,6 @@
 // (rob) This is a transliteration of the code in csv.py - this should be carcinized 🦀
 
-fn parse_rows(text: &str, delimiter: &str) -> Vec<String> {
+pub fn parse_rows(text: &str, delimiter: &str) -> Vec<String> {
     let chars = text.chars().collect::<Vec<_>>();
     let mut rows = Vec::new();
 
@@ -45,7 +45,7 @@ fn parse_rows(text: &str, delimiter: &str) -> Vec<String> {
     rows
 }
 
-fn parse_cells(row: &str, delimiter: &str) -> Vec<String> {
+pub fn parse_cells(row: &str, delimiter: &str) -> Vec<String> {
     let chars = row.chars().collect::<Vec<_>>();
 
     let mut cells = Vec::new();
