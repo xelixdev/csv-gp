@@ -1,0 +1,35 @@
+[build-system]
+requires = ["maturin>=0.14,<0.15"]
+build-backend = "maturin"
+
+[project]
+name = "csv-gp"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+[tool.poetry]
+name = "csv-gp"
+version = "0.1.0"
+description = ""
+authors = ["Rob Hales <rob.hales@xelix.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.1.0"
+pytest = "^7.2.0"
+isort = "^5.11.4"
+maturin = "^0.14.8"
+
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+line_length = 120
