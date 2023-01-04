@@ -141,6 +141,90 @@ fn cell_correctly_quoted(cell: &str) -> bool {
 }
 
 #[cfg(test)]
+mod check_row_tests {
+    use super::*;
+
+    #[test]
+    fn test_too_many_columns() {
+        let mut csv_details = CSVDetails::new(1);
+        csv_details.column_count = 2;
+
+        check_row(&mut csv_details, vec!["test".into(), "row".into()], ",", 0);
+        check_row(
+            &mut csv_details,
+            vec!["test".into(), "row".into(), "extra".into()],
+            ",",
+            1,
+        );
+
+        assert_eq!(csv_details.too_many_columns, vec![1])
+    }
+
+    #[test]
+    fn test_too_few_columns() {
+        let mut csv_details = CSVDetails::new(1);
+        csv_details.column_count = 2;
+
+        check_row(&mut csv_details, vec!["test".into(), "row".into()], ",", 0);
+        check_row(&mut csv_details, vec!["test".into()], ",", 1);
+
+        assert_eq!(csv_details.too_few_columns, vec![1])
+    }
+
+    #[test]
+    fn test_all_correctly_quoted() {
+        let mut csv_details = CSVDetails::new(1);
+
+        check_row(&mut csv_details, vec!["test".into()], ",", 0);
+        check_row(&mut csv_details, vec!["\"test".into()], ",", 1);
+
+        assert_eq!(csv_details.incorrect_cell_quote, vec![1])
+    }
+
+    #[test]
+    fn test_quoted_quote() {
+        let mut csv_details = CSVDetails::new(1);
+
+        check_row(&mut csv_details, vec!["test".into()], ",", 0);
+        check_row(&mut csv_details, vec!["\"\"test".into()], ",", 1);
+        check_row(&mut csv_details, vec!["\"\"\"test\"".into()], ",", 2);
+
+        assert_eq!(csv_details.quoted_quote, vec![1, 2]);
+        assert_eq!(csv_details.quoted_quote_correctly, vec![2]);
+    }
+
+    #[test]
+    fn test_quoted_newline() {
+        let mut csv_details = CSVDetails::new(1);
+
+        check_row(&mut csv_details, vec!["test".into()], ",", 0);
+        check_row(&mut csv_details, vec!["\"test\n\"".into()], ",", 1);
+
+        assert_eq!(csv_details.quoted_newline, vec![1]);
+    }
+
+    #[test]
+    fn test_quoted_delimiter() {
+        let mut csv_details = CSVDetails::new(1);
+
+        check_row(&mut csv_details, vec!["test".into()], ",", 0);
+        check_row(&mut csv_details, vec!["\"test,\"".into()], ",", 1);
+
+        assert_eq!(csv_details.quoted_delimiter, vec![1]);
+    }
+
+    #[test]
+    fn test_all_empty() {
+        let mut csv_details = CSVDetails::new(1);
+
+        check_row(&mut csv_details, vec!["test".into(), "".into()], ",", 0);
+        check_row(&mut csv_details, vec!["".into(), "\"\"".into()], ",", 1);
+
+        assert_eq!(csv_details.all_empty_rows, vec![1]);
+    }
+}
+
+#[cfg(test)]
 mod cell_correctly_quoted_tests {
     use super::*;
 
