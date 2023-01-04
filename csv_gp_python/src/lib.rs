@@ -70,7 +70,7 @@ impl PyCSVDetails {
 
 #[pyfunction]
 fn check_file(path: String, delimiter: &str) -> PyResult<PyCSVDetails> {
-    let result = ::csv_gp::checker::check_file(path, delimiter).unwrap();
+    let result = ::csv_gp::checker::check_file(path, delimiter)?;
     Ok(PyCSVDetails::new(result))
 }
 

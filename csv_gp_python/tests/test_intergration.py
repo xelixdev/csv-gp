@@ -1,5 +1,7 @@
 from pathlib import Path
+
 import csv_gp
+import pytest
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -20,3 +22,7 @@ def test_kitchen_sink():
     assert result.too_many_columns == [8]
     assert result.column_count_per_line == [2] * 7 + [1, 3]
 
+
+def test_file_non_existent():
+    with pytest.raises(FileNotFoundError):
+        csv_gp.check_file("shadow_realm.csv", ",")
