@@ -2,7 +2,7 @@ use std::{cmp::Ordering, fs, io};
 
 use crate::parser::{parse_cells, parse_rows};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CSVDetails {
     pub row_count: usize,
     pub column_count: usize,
