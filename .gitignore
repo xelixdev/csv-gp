@@ -1,4 +1,6 @@
 /target
+coverage/
+*.profraw
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

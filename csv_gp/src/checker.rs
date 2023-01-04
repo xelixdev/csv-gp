@@ -167,4 +167,24 @@ mod cell_correctly_quoted_tests {
             "\"5\"\"379'319'026\"\",\"\"SINV-00110094\""
         ))
     }
+
+    #[test]
+    fn test_no_quotes() {
+        assert!(cell_correctly_quoted("test"))
+    }
+
+    #[test]
+    fn test_no_quotes_when_stripped() {
+        assert!(cell_correctly_quoted("\"test\""))
+    }
+
+    #[test]
+    fn test_does_not_start() {
+        assert!(!cell_correctly_quoted("test\""))
+    }
+
+    #[test]
+    fn test_does_not_end() {
+        assert!(!cell_correctly_quoted("\"test"))
+    }
 }
