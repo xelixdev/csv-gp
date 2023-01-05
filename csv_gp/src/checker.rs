@@ -1,6 +1,10 @@
-use std::{cmp::Ordering, fs, io};
+use std::cmp::Ordering;
 
-use crate::parser::{parse_cells, parse_rows};
+use crate::{
+    error::CSVError,
+    file::read_encoded_file,
+    parser::{parse_cells, parse_rows},
+};
 
 #[derive(Debug, Clone)]
 pub struct CSVDetails {
@@ -40,8 +44,12 @@ impl CSVDetails {
     }
 }
 
-pub fn check_file(filename: String, delimiter: &str) -> io::Result<CSVDetails> {
-    let data = fs::read_to_string(filename)?;
+pub fn check_file(
+    filename: String,
+    delimiter: &str,
+    encoding: &str,
+) -> Result<CSVDetails, CSVError> {
+    let data = read_encoded_file(filename, encoding)?;
 
     let rows = parse_rows(&data, delimiter);
     let mut csv_details = CSVDetails::new(rows.len());

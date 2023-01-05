@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 clap = {version = "4.0.32", features = ["derive"] }
+encoding_rs = "0.8.31"
 

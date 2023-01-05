@@ -7,7 +7,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 
 def test_kitchen_sink():
-    result = csv_gp.check_file(str(FIXTURES / "kitchen_sink.csv"), ",")
+    result = csv_gp.check_file(str(FIXTURES / "kitchen_sink.csv"), ",", encoding="utf-8")
 
     assert result
     assert result.column_count == 2
@@ -23,6 +23,19 @@ def test_kitchen_sink():
     assert result.column_count_per_line == [2] * 7 + [1, 3]
 
 
+def test_different_encoding():
+    result = csv_gp.check_file(str(FIXTURES / "mac_roman.csv"), ",", encoding="macintosh")
+
+    assert result
+    assert result.column_count == 2
+    assert result.row_count == 2
+
+
+def test_unknown_encoding():
+    with pytest.raises(ValueError):
+        csv_gp.check_file(str(FIXTURES / "kitchen_sink.csv"), ",", encoding="foo")
+
+
 def test_file_non_existent():
-    with pytest.raises(FileNotFoundError):
-        csv_gp.check_file("shadow_realm.csv", ",")
+    with pytest.raises(ValueError):
+        csv_gp.check_file("shadow_realm.csv", ",", encoding="utf-8")

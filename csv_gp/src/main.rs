@@ -9,6 +9,8 @@ struct Arguments {
     file_path: String,
     #[clap(default_value = ",", short, long)]
     delimiter: String,
+    #[clap(default_value = "utf-8", short, long)]
+    encoding: String,
 }
 
 fn main() {
@@ -16,7 +18,7 @@ fn main() {
 
     let start = Instant::now();
 
-    let result = check_file(args.file_path, &args.delimiter).unwrap();
+    let result = check_file(args.file_path, &args.delimiter, &args.encoding).unwrap();
 
     println!("Checking took {}s.", start.elapsed().as_secs());
 

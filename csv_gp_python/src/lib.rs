@@ -1,5 +1,5 @@
-use ::csv_gp::checker::CSVDetails;
-use pyo3::prelude::*;
+use ::csv_gp::{checker::CSVDetails, error::CSVError};
+use pyo3::{exceptions::PyValueError, prelude::*};
 
 #[pyclass(name = "CSVDetails")]
 struct PyCSVDetails(CSVDetails);
@@ -68,13 +68,26 @@ impl PyCSVDetails {
     }
 }
 
+struct PyCSVError(CSVError);
+
+impl From<PyCSVError> for PyErr {
+    fn from(e: PyCSVError) -> Self {
+        PyValueError::new_err(e.0.to_string())
+    }
+}
+
+impl From<CSVError> for PyCSVError {
+    fn from(e: CSVError) -> Self {
+        Self(e)
+    }
+}
+
 #[pyfunction]
-fn check_file(path: String, delimiter: &str) -> PyResult<PyCSVDetails> {
-    let result = ::csv_gp::checker::check_file(path, delimiter)?;
+fn check_file(path: String, delimiter: &str, encoding: &str) -> Result<PyCSVDetails, PyCSVError> {
+    let result = ::csv_gp::checker::check_file(path, delimiter, encoding)?;
     Ok(PyCSVDetails::new(result))
 }
 
-/// A Python module implemented in Rust.
 #[pymodule]
 fn csv_gp(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(check_file, m)?)?;
