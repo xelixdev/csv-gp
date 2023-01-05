@@ -23,6 +23,11 @@ impl PyCSVDetails {
     }
 
     #[getter]
+    fn invalid_character_count(&self) -> usize {
+        self.0.invalid_character_count
+    }
+
+    #[getter]
     fn column_count_per_line(&self) -> Vec<usize> {
         self.0.column_count_per_line.clone()
     }

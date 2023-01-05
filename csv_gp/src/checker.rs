@@ -10,6 +10,7 @@ use crate::{
 pub struct CSVDetails {
     pub row_count: usize,
     pub column_count: usize,
+    pub invalid_character_count: usize,
     pub too_few_columns: Vec<usize>,
     pub too_many_columns: Vec<usize>,
     pub column_count_per_line: Vec<usize>,
@@ -26,6 +27,7 @@ impl CSVDetails {
         Self {
             row_count,
             column_count: 0,
+            invalid_character_count: 0,
             column_count_per_line: vec![0; row_count],
             too_few_columns: Vec::new(),
             too_many_columns: Vec::new(),
@@ -91,7 +93,9 @@ fn check_row(csv_details: &mut CSVDetails, cells: Vec<String>, delimiter: &str, 
         has_quoted_newline |= cell.contains('\n');
         has_quoted_delimiter |= cell.contains(delimiter);
 
-        empty &= cell.is_empty() || cell == "\"\""
+        empty &= cell.is_empty() || cell == "\"\"";
+
+        csv_details.invalid_character_count += cell.chars().filter(|x| x == &'\u{FFFD}').count();
     }
 
     if has_quoted_quote {
