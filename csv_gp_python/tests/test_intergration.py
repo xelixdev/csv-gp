@@ -49,3 +49,11 @@ def test_wrong_encoding():
 def test_file_non_existent():
     with pytest.raises(ValueError):
         csv_gp.check_file("shadow_realm.csv", ",", encoding="utf-8")
+
+
+def test_empty_file():
+    result = csv_gp.check_file(str(FIXTURES / "empty.csv"), ",", encoding="utf-8")
+
+    assert result
+    assert result.row_count == 0
+    assert result.column_count == 0
