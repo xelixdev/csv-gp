@@ -18,8 +18,19 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: psf/black@stable
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'poetry'
+      - name: Install Deps
+        run: poetry install
+      - name: Run Black
+        run: "poetry run black --check --diff ."
   test:
     runs-on: ubuntu-latest
     steps:
