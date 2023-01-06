@@ -71,6 +71,11 @@ impl PyCSVDetails {
     fn all_empty_rows(&self) -> Vec<usize> {
         self.0.all_empty_rows.clone()
     }
+
+    #[getter]
+    fn header_messed_up(&self) -> bool {
+        self.0.header_messed_up()
+    }
 }
 
 struct PyCSVError(CSVError);

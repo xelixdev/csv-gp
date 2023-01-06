@@ -22,6 +22,7 @@ def test_kitchen_sink():
     assert result.too_few_columns == [8]
     assert result.too_many_columns == [9]
     assert result.column_count_per_line == [2, 2, 2, 1, 2, 2, 2, 2, 1, 3]
+    assert not result.header_messed_up
 
 
 def test_different_encoding():
@@ -58,3 +59,10 @@ def test_empty_file():
     assert result
     assert result.row_count == 0
     assert result.column_count == 0
+
+
+def test_header_messed_up():
+    result = csv_gp.check_file(str(FIXTURES / "header_messed_up.csv"), ",", encoding="utf-8")
+    
+    assert result
+    assert result.header_messed_up
