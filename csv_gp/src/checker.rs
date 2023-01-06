@@ -1,75 +1,33 @@
 use std::cmp::Ordering;
 
-use crate::{
-    error::CSVError,
-    file::read_encoded_file,
-    parser::{parse_cells, parse_rows},
-};
-
-#[derive(Debug, Clone)]
-pub struct CSVDetails {
-    pub row_count: usize,
-    pub column_count: usize,
-    pub invalid_character_count: usize,
-    pub too_few_columns: Vec<usize>,
-    pub too_many_columns: Vec<usize>,
-    pub column_count_per_line: Vec<usize>,
-    pub quoted_delimiter: Vec<usize>,
-    pub quoted_newline: Vec<usize>,
-    pub quoted_quote: Vec<usize>,
-    pub quoted_quote_correctly: Vec<usize>,
-    pub incorrect_cell_quote: Vec<usize>,
-    pub all_empty_rows: Vec<usize>,
-}
-
-impl CSVDetails {
-    fn new() -> Self {
-        Self {
-            row_count: 0,
-            column_count: 0,
-            invalid_character_count: 0,
-            column_count_per_line: Vec::new(),
-            too_few_columns: Vec::new(),
-            too_many_columns: Vec::new(),
-            quoted_delimiter: Vec::new(),
-            quoted_newline: Vec::new(),
-            quoted_quote: Vec::new(),
-            quoted_quote_correctly: Vec::new(),
-            incorrect_cell_quote: Vec::new(),
-            all_empty_rows: Vec::new(),
-        }
-    }
-
-    pub fn header_messed_up(&self) -> bool {
-        let bad_row_count = self.too_few_columns.len() + self.too_many_columns.len();
-        self.row_count - 1 == bad_row_count
-    }
-}
+use crate::{csv_details::CSVDetails, error::CSVError, parser::parse_file};
 
 pub fn check_file(
     filename: String,
     delimiter: &str,
     encoding: &str,
 ) -> Result<CSVDetails, CSVError> {
-    let data = read_encoded_file(filename, encoding)?;
-
-    let rows = parse_rows(&data, delimiter);
     let mut csv_details = CSVDetails::new();
+    let rows = parse_file(filename, delimiter, encoding)?;
 
-    for (i, row) in rows.iter().enumerate() {
-        let cells = parse_cells(row, delimiter);
-
+    for (i, cells) in rows.iter().enumerate() {
         csv_details.column_count_per_line.push(cells.len());
         if i == 0 {
-            csv_details.column_count = cells.len();
+            csv_details.column_count = cells.len()
         }
-        check_row(&mut csv_details, cells, delimiter, i)
+
+        check_row(&mut csv_details, cells, delimiter, i);
     }
 
     Ok(csv_details)
 }
 
-fn check_row(csv_details: &mut CSVDetails, cells: Vec<String>, delimiter: &str, row_number: usize) {
+fn check_row(
+    csv_details: &mut CSVDetails,
+    cells: &Vec<String>,
+    delimiter: &str,
+    row_number: usize,
+) {
     // Cell checks
     let mut all_correctly_quoted = true;
 
@@ -79,7 +37,7 @@ fn check_row(csv_details: &mut CSVDetails, cells: Vec<String>, delimiter: &str, 
 
     let mut empty = true;
 
-    for cell in &cells {
+    for cell in cells {
         all_correctly_quoted &= cell_correctly_quoted(cell);
 
         has_quoted_quote |= cell != "\"\"" && cell.contains("\"\"");
@@ -165,10 +123,10 @@ mod check_row_tests {
         let mut csv_details = CSVDetails::new();
         csv_details.column_count = 2;
 
-        check_row(&mut csv_details, vec!["test".into(), "row".into()], ",", 0);
+        check_row(&mut csv_details, &vec!["test".into(), "row".into()], ",", 0);
         check_row(
             &mut csv_details,
-            vec!["test".into(), "row".into(), "extra".into()],
+            &vec!["test".into(), "row".into(), "extra".into()],
             ",",
             1,
         );
@@ -181,8 +139,8 @@ mod check_row_tests {
         let mut csv_details = CSVDetails::new();
         csv_details.column_count = 2;
 
-        check_row(&mut csv_details, vec!["test".into(), "row".into()], ",", 0);
-        check_row(&mut csv_details, vec!["test".into()], ",", 1);
+        check_row(&mut csv_details, &vec!["test".into(), "row".into()], ",", 0);
+        check_row(&mut csv_details, &vec!["test".into()], ",", 1);
 
         assert_eq!(csv_details.too_few_columns, vec![1])
     }
@@ -191,8 +149,8 @@ mod check_row_tests {
     fn test_all_correctly_quoted() {
         let mut csv_details = CSVDetails::new();
 
-        check_row(&mut csv_details, vec!["test".into()], ",", 0);
-        check_row(&mut csv_details, vec!["\"test".into()], ",", 1);
+        check_row(&mut csv_details, &vec!["test".into()], ",", 0);
+        check_row(&mut csv_details, &vec!["\"test".into()], ",", 1);
 
         assert_eq!(csv_details.incorrect_cell_quote, vec![1])
     }
@@ -201,9 +159,9 @@ mod check_row_tests {
     fn test_quoted_quote() {
         let mut csv_details = CSVDetails::new();
 
-        check_row(&mut csv_details, vec!["test".into()], ",", 0);
-        check_row(&mut csv_details, vec!["\"\"test".into()], ",", 1);
-        check_row(&mut csv_details, vec!["\"\"\"test\"".into()], ",", 2);
+        check_row(&mut csv_details, &vec!["test".into()], ",", 0);
+        check_row(&mut csv_details, &vec!["\"\"test".into()], ",", 1);
+        check_row(&mut csv_details, &vec!["\"\"\"test\"".into()], ",", 2);
 
         assert_eq!(csv_details.quoted_quote, vec![1, 2]);
         assert_eq!(csv_details.quoted_quote_correctly, vec![2]);
@@ -213,8 +171,8 @@ mod check_row_tests {
     fn test_quoted_newline() {
         let mut csv_details = CSVDetails::new();
 
-        check_row(&mut csv_details, vec!["test".into()], ",", 0);
-        check_row(&mut csv_details, vec!["\"test\n\"".into()], ",", 1);
+        check_row(&mut csv_details, &vec!["test".into()], ",", 0);
+        check_row(&mut csv_details, &vec!["\"test\n\"".into()], ",", 1);
 
         assert_eq!(csv_details.quoted_newline, vec![1]);
     }
@@ -223,8 +181,8 @@ mod check_row_tests {
     fn test_quoted_delimiter() {
         let mut csv_details = CSVDetails::new();
 
-        check_row(&mut csv_details, vec!["test".into()], ",", 0);
-        check_row(&mut csv_details, vec!["\"test,\"".into()], ",", 1);
+        check_row(&mut csv_details, &vec!["test".into()], ",", 0);
+        check_row(&mut csv_details, &vec!["\"test,\"".into()], ",", 1);
 
         assert_eq!(csv_details.quoted_delimiter, vec![1]);
     }
@@ -233,8 +191,8 @@ mod check_row_tests {
     fn test_all_empty() {
         let mut csv_details = CSVDetails::new();
 
-        check_row(&mut csv_details, vec!["test".into(), "".into()], ",", 0);
-        check_row(&mut csv_details, vec!["".into(), "\"\"".into()], ",", 1);
+        check_row(&mut csv_details, &vec!["test".into(), "".into()], ",", 0);
+        check_row(&mut csv_details, &vec!["".into(), "\"\"".into()], ",", 1);
 
         assert_eq!(csv_details.all_empty_rows, vec![1]);
         assert_eq!(csv_details.row_count, 1);

@@ -1,4 +1,4 @@
-use ::csv_gp::{checker::CSVDetails, error::CSVError};
+use ::csv_gp::{csv_details::CSVDetails, error::CSVError};
 use pyo3::{exceptions::PyValueError, prelude::*};
 
 #[pyclass(name = "CSVDetails")]

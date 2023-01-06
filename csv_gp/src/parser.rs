@@ -1,6 +1,20 @@
 // (rob) This is a transliteration of the code in csv.py - this should be carcinized 🦀
 
-pub fn parse_rows(text: &str, delimiter: &str) -> Vec<String> {
+use crate::{error::CSVError, file::read_encoded_file};
+
+pub fn parse_file(
+    filename: String,
+    delimiter: &str,
+    encoding: &str,
+) -> Result<Vec<Vec<String>>, CSVError> {
+    let data = read_encoded_file(filename, encoding)?;
+
+    let rows = parse_rows(&data, delimiter);
+
+    Ok(rows.iter().map(|r| parse_cells(r, delimiter)).collect())
+}
+
+fn parse_rows(text: &str, delimiter: &str) -> Vec<String> {
     let chars = text.chars().collect::<Vec<_>>();
     let mut rows = Vec::new();
 
@@ -45,7 +59,7 @@ pub fn parse_rows(text: &str, delimiter: &str) -> Vec<String> {
     rows
 }
 
-pub fn parse_cells(row: &str, delimiter: &str) -> Vec<String> {
+fn parse_cells(row: &str, delimiter: &str) -> Vec<String> {
     let chars = row.chars().collect::<Vec<_>>();
 
     let mut cells = Vec::new();
