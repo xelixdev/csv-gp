@@ -1,8 +1,7 @@
 from pathlib import Path
 
-import pytest
-
 import csv_gp
+import pytest
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -63,6 +62,6 @@ def test_empty_file():
 
 def test_header_messed_up():
     result = csv_gp.check_file(str(FIXTURES / "header_messed_up.csv"), ",", encoding="utf-8")
-    
+
     assert result
     assert result.header_messed_up
