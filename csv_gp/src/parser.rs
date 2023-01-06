@@ -1,12 +1,12 @@
 // (rob) This is a transliteration of the code in csv.py - this should be carcinized 🦀
 
-use crate::{error::CSVError, file::read_encoded_file};
+use crate::{cell::Cell, error::CSVError, file::read_encoded_file};
 
 pub fn parse_file(
     filename: String,
     delimiter: &str,
     encoding: &str,
-) -> Result<Vec<Vec<String>>, CSVError> {
+) -> Result<Vec<Vec<Cell>>, CSVError> {
     let data = read_encoded_file(filename, encoding)?;
 
     let rows = parse_rows(&data, delimiter);
@@ -59,7 +59,7 @@ fn parse_rows(text: &str, delimiter: &str) -> Vec<String> {
     rows
 }
 
-fn parse_cells(row: &str, delimiter: &str) -> Vec<String> {
+fn parse_cells(row: &str, delimiter: &str) -> Vec<Cell> {
     let chars = row.chars().collect::<Vec<_>>();
 
     let mut cells = Vec::new();
@@ -96,7 +96,7 @@ fn parse_cells(row: &str, delimiter: &str) -> Vec<String> {
             if opened_quote {
                 current_selection.push(current_char);
             } else {
-                cells.push(current_selection.clone());
+                cells.push(Cell::new(current_selection.clone()));
                 current_selection = String::new();
             }
 
@@ -105,7 +105,7 @@ fn parse_cells(row: &str, delimiter: &str) -> Vec<String> {
         }
     }
 
-    cells.push(current_selection);
+    cells.push(Cell::new(current_selection));
 
     cells
 }
@@ -153,27 +153,39 @@ mod parse_cells_tests {
     #[test]
     fn test_simple() {
         let input = "test,row";
-        assert_eq!(parse_cells(input, ","), vec!["test", "row"])
+        assert_eq!(
+            parse_cells(input, ","),
+            vec![Cell::new("test"), Cell::new("row")]
+        )
     }
 
     #[test]
     fn test_quoted_newline() {
         let input = "test,\"row\n\"";
 
-        assert_eq!(parse_cells(input, ","), vec!["test", "\"row\n\""])
+        assert_eq!(
+            parse_cells(input, ","),
+            vec![Cell::new("test"), Cell::new("\"row\n\"")]
+        )
     }
 
     #[test]
     fn test_quoted_quote() {
         let input = "test,\"\"\"row\"\"\"";
 
-        assert_eq!(parse_cells(input, ","), vec!["test", "\"\"\"row\"\"\""])
+        assert_eq!(
+            parse_cells(input, ","),
+            vec![Cell::new("test"), Cell::new("\"\"\"row\"\"\"")]
+        )
     }
 
     #[test]
     fn test_quoted_delimiter() {
         let input = "test,\"row,\"";
 
-        assert_eq!(parse_cells(input, ","), vec!["test", "\"row,\""])
+        assert_eq!(
+            parse_cells(input, ","),
+            vec![Cell::new("test"), Cell::new("\"row,\"")]
+        )
     }
 }

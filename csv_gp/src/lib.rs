@@ -1,3 +1,4 @@
+pub mod cell;
 pub mod checker;
 pub mod csv_details;
 pub mod error;
