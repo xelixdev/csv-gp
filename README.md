@@ -9,7 +9,7 @@ CSV GP can be used in three ways.
 ### Standalone binary
 
 1. [Install rust](https://www.rust-lang.org/tools/install)
-2. Clone the repo
+2. Clone the repo and navigate into it
 3. Run `cargo install --path csv_gp`
 4. The `csv-gp` command will now be available to run, please see `csv-gp --help` for usage
 
