@@ -24,7 +24,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: build
-          args: --release -m csv_gp_python/Cargo.toml --out dist
+          args: --release -m csv_gp_python/Cargo.toml --sdist --out dist
       - name: Publish wheel
         run: |
           export TWINE_USERNAME=aws
