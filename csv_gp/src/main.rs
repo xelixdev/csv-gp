@@ -7,6 +7,8 @@ use csv_gp::checker::check_file;
 #[derive(Parser, Default, Debug)]
 struct Arguments {
     file_path: String,
+    #[clap(short, long)]
+    correct_rows: Option<String>,
     #[clap(default_value = ",", short, long)]
     delimiter: String,
     #[clap(default_value = "utf-8", short, long)]
@@ -18,7 +20,13 @@ fn main() {
 
     let start = Instant::now();
 
-    let result = check_file(args.file_path, &args.delimiter, &args.encoding).unwrap();
+    let result = check_file(
+        args.file_path,
+        &args.delimiter,
+        &args.encoding,
+        args.correct_rows.as_deref(),
+    )
+    .unwrap();
 
     println!("Checking took {}s.", start.elapsed().as_secs());
 
@@ -88,5 +96,9 @@ fn main() {
         )
     } else {
         println!("There are no rows with incorrect cell quotes.")
+    }
+
+    if let Some(path) = args.correct_rows {
+        println!("Correct rows were saved to {}", path)
     }
 }

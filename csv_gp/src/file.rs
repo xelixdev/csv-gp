@@ -1,10 +1,13 @@
-use std::fs;
+use std::{fs, path::Path};
 
 use encoding_rs::Encoding;
 
 use crate::error::{CSVError, UnknownEncoding};
 
-pub(crate) fn read_encoded_file(filename: String, encoding: &str) -> Result<String, CSVError> {
+pub(crate) fn read_encoded_file(
+    filename: impl AsRef<Path>,
+    encoding: &str,
+) -> Result<String, CSVError> {
     let bytes = fs::read(filename)?;
 
     if let Some(encoding) = Encoding::for_label(encoding.as_bytes()) {

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 #[derive(Debug, Clone, Default)]
 pub struct CSVDetails {
     pub row_count: usize,
@@ -12,6 +14,7 @@ pub struct CSVDetails {
     pub quoted_quote_correctly: Vec<usize>,
     pub incorrect_cell_quote: Vec<usize>,
     pub all_empty_rows: Vec<usize>,
+    pub valid_rows: HashSet<usize>,
 }
 
 impl CSVDetails {
@@ -29,6 +32,7 @@ impl CSVDetails {
             quoted_quote_correctly: Vec::new(),
             incorrect_cell_quote: Vec::new(),
             all_empty_rows: Vec::new(),
+            valid_rows: HashSet::new(),
         }
     }
 

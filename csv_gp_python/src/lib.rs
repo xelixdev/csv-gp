@@ -1,6 +1,7 @@
 use ::csv_gp::{csv_details::CSVDetails, error::CSVError};
 use pyo3::{exceptions::PyValueError, prelude::*};
 
+// Results struct wrapper
 #[pyclass(name = "CSVDetails")]
 struct PyCSVDetails(CSVDetails);
 
@@ -78,6 +79,7 @@ impl PyCSVDetails {
     }
 }
 
+// Error wrapper
 struct PyCSVError(CSVError);
 
 impl From<PyCSVError> for PyErr {
@@ -93,8 +95,13 @@ impl From<CSVError> for PyCSVError {
 }
 
 #[pyfunction]
-fn check_file(path: String, delimiter: &str, encoding: &str) -> Result<PyCSVDetails, PyCSVError> {
-    let result = ::csv_gp::checker::check_file(path, delimiter, encoding)?;
+fn check_file(
+    path: String,
+    delimiter: &str,
+    encoding: &str,
+    valid_rows_output_path: Option<&str>,
+) -> Result<PyCSVDetails, PyCSVError> {
+    let result = ::csv_gp::checker::check_file(path, delimiter, encoding, valid_rows_output_path)?;
     Ok(PyCSVDetails::new(result))
 }
 

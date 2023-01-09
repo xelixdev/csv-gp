@@ -1,14 +1,37 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, path::Path};
 
-use crate::{cell::Cell, csv_details::CSVDetails, error::CSVError, parser::parse_file};
+use crate::{
+    cell::Cell,
+    csv_details::CSVDetails,
+    error::CSVError,
+    parser::parse_file,
+    valid_file::{get_delimiter_as_byte, save_valid_file},
+};
 
 pub fn check_file(
-    filename: String,
+    filename: impl AsRef<Path>,
     delimiter: &str,
     encoding: &str,
+    valid_rows_path: Option<&str>,
 ) -> Result<CSVDetails, CSVError> {
-    let mut csv_details = CSVDetails::new();
     let rows = parse_file(filename, delimiter, encoding)?;
+
+    let csv_details = check_rows(&rows, delimiter);
+
+    if let Some(valid_rows_path) = valid_rows_path {
+        save_valid_file(
+            rows,
+            &csv_details,
+            get_delimiter_as_byte(delimiter)?,
+            valid_rows_path,
+        )?
+    }
+
+    Ok(csv_details)
+}
+
+fn check_rows(rows: &[Vec<Cell>], delimiter: &str) -> CSVDetails {
+    let mut csv_details = CSVDetails::new();
 
     for (i, cells) in rows.iter().enumerate() {
         csv_details.column_count_per_line.push(cells.len());
@@ -19,7 +42,7 @@ pub fn check_file(
         check_row(&mut csv_details, cells, delimiter, i);
     }
 
-    Ok(csv_details)
+    csv_details
 }
 
 fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, delimiter: &str, row_number: usize) {
@@ -43,15 +66,19 @@ fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, delimiter: &str, r
         csv_details.invalid_character_count += cell.invalid_character_count();
     }
 
+    // Length checks
+    let mut too_many_columns = false;
+    let mut too_few_columns = false;
+
     if !empty {
-        // Length checks
         match cells.len().cmp(&csv_details.column_count) {
-            Ordering::Greater => csv_details.too_many_columns.push(row_number),
-            Ordering::Less => csv_details.too_few_columns.push(row_number),
+            Ordering::Greater => too_many_columns = true,
+            Ordering::Less => too_few_columns = true,
             Ordering::Equal => (),
         }
     }
 
+    // Write results
     if has_quoted_quote {
         csv_details.quoted_quote.push(row_number);
         if all_correctly_quoted {
@@ -75,6 +102,18 @@ fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, delimiter: &str, r
 
     if !all_correctly_quoted {
         csv_details.incorrect_cell_quote.push(row_number);
+    }
+
+    if too_few_columns {
+        csv_details.too_few_columns.push(row_number);
+    }
+
+    if too_many_columns {
+        csv_details.too_many_columns.push(row_number);
+    }
+
+    if all_correctly_quoted && !too_few_columns && !too_many_columns && !empty {
+        csv_details.valid_rows.insert(row_number);
     }
 }
 

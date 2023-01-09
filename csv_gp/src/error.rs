@@ -19,10 +19,28 @@ impl fmt::Display for UnknownEncoding {
 
 impl error::Error for UnknownEncoding {}
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum DelimiterError {
+    ZeroLengthDelimiter,
+    MultiByteDelimiter,
+}
+
+impl fmt::Display for DelimiterError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DelimiterError::ZeroLengthDelimiter => write!(f, "delimiter cannot be empty"),
+            DelimiterError::MultiByteDelimiter => write!(f, "delimiter must be exactly one byte"),
+        }
+    }
+}
+
+impl error::Error for DelimiterError {}
+
 #[derive(Debug)]
 pub enum CSVError {
     UnknownEncoding(UnknownEncoding),
     IO(io::Error),
+    DelimiterError(DelimiterError),
 }
 
 impl fmt::Display for CSVError {
@@ -30,6 +48,7 @@ impl fmt::Display for CSVError {
         match self {
             CSVError::IO(e) => write!(f, "{}", e),
             CSVError::UnknownEncoding(e) => write!(f, "{}", e),
+            CSVError::DelimiterError(e) => write!(f, "{}", e),
         }
     }
 }
@@ -45,5 +64,11 @@ impl From<io::Error> for CSVError {
 impl From<UnknownEncoding> for CSVError {
     fn from(e: UnknownEncoding) -> Self {
         CSVError::UnknownEncoding(e)
+    }
+}
+
+impl From<DelimiterError> for CSVError {
+    fn from(e: DelimiterError) -> Self {
+        CSVError::DelimiterError(e)
     }
 }

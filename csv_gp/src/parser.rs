@@ -1,9 +1,11 @@
 // (rob) This is a transliteration of the code in csv.py - this should be carcinized 🦀
 
+use std::path::Path;
+
 use crate::{cell::Cell, error::CSVError, file::read_encoded_file};
 
 pub fn parse_file(
-    filename: String,
+    filename: impl AsRef<Path>,
     delimiter: &str,
     encoding: &str,
 ) -> Result<Vec<Vec<Cell>>, CSVError> {

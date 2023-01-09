@@ -1,4 +1,5 @@
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 import csv_gp
 import pytest
@@ -65,3 +66,14 @@ def test_header_messed_up():
 
     assert result
     assert result.header_messed_up
+
+
+def test_output_file():
+    with NamedTemporaryFile() as temp_file:
+        result = csv_gp.check_file(
+            str(FIXTURES / "kitchen_sink.csv"), ",", encoding="utf-8", valid_rows_output_path=temp_file.name
+        )
+        temp_file.seek(0)
+
+        assert result
+        assert temp_file.read() == (FIXTURES / "kitchen_sink_valid.csv").read_bytes()
