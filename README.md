@@ -23,7 +23,7 @@ Add the following to your `Cargo.toml`:
 
 ### From package manager
 
-The libary is uploaded to the `xelix` codeartifact repository, once you are authenticated to use that you can install with:
+The library is uploaded to the `xelix` codeartifact repository, once you are authenticated to use that you can install with:
 
 `pip install --index-url <codeartifact url> csv-gp`
 
