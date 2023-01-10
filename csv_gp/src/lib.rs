@@ -1,7 +1,7 @@
-pub mod cell;
+pub(crate) mod cell;
 pub mod checker;
 pub mod csv_details;
 pub mod error;
-pub mod file;
-pub mod parser;
-pub mod valid_file;
+pub(crate) mod file;
+pub(crate) mod parser;
+pub(crate) mod valid_file;
