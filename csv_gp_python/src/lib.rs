@@ -4,7 +4,7 @@ use ::csv_gp::{csv_details::CSVDetails, error::CSVError};
 use pyo3::{exceptions::PyValueError, prelude::*};
 
 // Results struct wrapper
-#[pyclass(name = "CSVDetails")]
+#[pyclass(name = "CSVDetails", module = "csv_gp")]
 struct PyCSVDetails(CSVDetails);
 
 impl PyCSVDetails {
