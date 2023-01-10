@@ -4,7 +4,7 @@ use std::path::Path;
 
 use crate::{cell::Cell, error::CSVError, file::read_encoded_file};
 
-pub fn parse_file(
+pub(crate) fn parse_file(
     filename: impl AsRef<Path>,
     delimiter: &str,
     encoding: &str,
