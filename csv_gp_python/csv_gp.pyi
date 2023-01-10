@@ -82,6 +82,12 @@ class CSVDetails:
         """
         ...
     @property
+    def valid_rows(self) -> set[int]:
+        """
+        Set of all row numbers that are valid in the file
+        """
+        ...
+    @property
     def header_messed_up(self) -> bool:
         """
         The header is considered messed up when none of the rows have the same number of columns as the header
