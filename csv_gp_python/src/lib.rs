@@ -1,8 +1,10 @@
+use std::collections::HashSet;
+
 use ::csv_gp::{csv_details::CSVDetails, error::CSVError};
 use pyo3::{exceptions::PyValueError, prelude::*};
 
 // Results struct wrapper
-#[pyclass(name = "CSVDetails")]
+#[pyclass(name = "CSVDetails", module = "csv_gp")]
 struct PyCSVDetails(CSVDetails);
 
 impl PyCSVDetails {
@@ -71,6 +73,11 @@ impl PyCSVDetails {
     #[getter]
     fn all_empty_rows(&self) -> Vec<usize> {
         self.0.all_empty_rows.clone()
+    }
+
+    #[getter]
+    fn valid_rows(&self) -> HashSet<usize> {
+        self.0.valid_rows.clone()
     }
 
     #[getter]

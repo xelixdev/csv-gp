@@ -8,17 +8,19 @@ use crate::{
     valid_file::{get_delimiter_as_byte, save_valid_file},
 };
 
+/// Check the file located at `path`, interpreting the file with `delimiter` and `encoding`.
+/// If `valid_rows_output_path` is passed, a file containing the valid rows will be written to the specified path.
 pub fn check_file(
-    filename: impl AsRef<Path>,
+    path: impl AsRef<Path>,
     delimiter: &str,
     encoding: &str,
-    valid_rows_path: Option<&str>,
+    valid_rows_output_path: Option<&str>,
 ) -> Result<CSVDetails, CSVError> {
-    let rows = parse_file(filename, delimiter, encoding)?;
+    let rows = parse_file(path, delimiter, encoding)?;
 
     let csv_details = check_rows(&rows, delimiter);
 
-    if let Some(valid_rows_path) = valid_rows_path {
+    if let Some(valid_rows_path) = valid_rows_output_path {
         save_valid_file(
             rows,
             &csv_details,

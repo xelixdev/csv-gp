@@ -22,6 +22,7 @@ def test_kitchen_sink():
     assert result.too_few_columns == [8]
     assert result.too_many_columns == [9]
     assert result.column_count_per_line == [2, 2, 2, 1, 2, 2, 2, 2, 1, 3]
+    assert result.valid_rows == {0, 4, 5, 6}
     assert not result.header_messed_up
 
 

@@ -19,7 +19,7 @@ pub fn get_delimiter_as_byte(delimiter: &str) -> Result<u8, DelimiterError> {
 }
 
 /// Saves a file containing only the valid rows according to the passed CSVDetails
-pub fn save_valid_file(
+pub(crate) fn save_valid_file(
     rows: Vec<Vec<Cell>>,
     csv_details: &CSVDetails,
     delimiter: u8,
