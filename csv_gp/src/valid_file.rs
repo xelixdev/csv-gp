@@ -1,6 +1,10 @@
 use std::{fs, io, path::Path};
 
-use crate::{cell::Cell, csv_details::CSVDetails, error::DelimiterError};
+use crate::{
+    csv_details::CSVDetails,
+    error::{CSVError, DelimiterError},
+    parser::parse_file,
+};
 
 pub fn get_delimiter_as_byte(delimiter: &str) -> Result<u8, DelimiterError> {
     let mut bytes = delimiter.bytes();
@@ -20,29 +24,28 @@ pub fn get_delimiter_as_byte(delimiter: &str) -> Result<u8, DelimiterError> {
 
 /// Saves a file containing only the valid rows according to the passed CSVDetails
 pub(crate) fn save_valid_file(
-    rows: Vec<Vec<Cell>>,
+    path: impl AsRef<Path>,
     csv_details: &CSVDetails,
-    delimiter: u8,
+    delimiter: &str,
+    encoding: &str,
     output_path: impl AsRef<Path>,
-) -> io::Result<()> {
+) -> Result<(), CSVError> {
     // Create intermediate directories
     if let Some(parent) = output_path.as_ref().parent() {
         fs::create_dir_all(parent)?;
     }
 
     let mut writer = csv::WriterBuilder::new()
-        .delimiter(delimiter)
+        .delimiter(get_delimiter_as_byte(delimiter)?)
         .quote_style(csv::QuoteStyle::Never) // quoting was untouched during parsing so set to avoid double quoting
-        .from_path(output_path)?;
+        .from_path(output_path)
+        .map_err(Into::<io::Error>::into)?;
 
-    let valid = rows
-        .iter()
-        .enumerate()
-        .filter(|(i, _r)| csv_details.valid_rows.contains(i))
-        .map(|x| x.1);
-
-    for row in valid {
-        writer.write_record(row)?;
+    for (i, row_result) in parse_file(path, delimiter, encoding)?.enumerate() {
+        if csv_details.valid_rows.contains(&i) {
+            let row = row_result?;
+            writer.write_record(row).map_err(Into::<io::Error>::into)?;
+        }
     }
 
     writer.flush()?;
@@ -80,42 +83,36 @@ mod tests {
         )
     }
 
-    fn rows_with_valid() -> (Vec<Vec<Cell>>, CSVDetails) {
-        let rows = vec![
-            vec![Cell::new("a"), Cell::new("b")],
-            vec![Cell::new("invalid")],
-            vec![Cell::new("\"\"\"quoted\"\"\""), Cell::new("row")],
-        ];
+    fn rows_with_valid(path: impl AsRef<Path>) -> (CSVDetails, impl AsRef<Path>) {
+        fs::write(&path, "a,b\ninvalid\n\"\"\"quoted\"\"\",row").unwrap();
         let mut csv_details = CSVDetails::new();
         csv_details.valid_rows = HashSet::from_iter(vec![0, 2]);
 
-        (rows, csv_details)
+        (csv_details, path)
     }
 
     #[test]
     fn test_save_valid_file() {
-        let (rows, csv_details) = rows_with_valid();
-
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("test_save_valid_file.csv");
+        let (csv_details, path) = rows_with_valid(dir.path().join("test_save_valid_file_base.csv"));
+        let out_path = dir.path().join("test_save_valid_file.csv");
 
-        save_valid_file(rows, &csv_details, b',', &path).unwrap();
+        save_valid_file(path, &csv_details, ",", "utf-8", &out_path).unwrap();
 
-        let file = fs::read_to_string(path).unwrap();
+        let file = fs::read_to_string(out_path).unwrap();
 
         assert_eq!(file, "a,b\n\"\"\"quoted\"\"\",row\n")
     }
 
     #[test]
     fn test_save_valid_file_create_parent_dir() {
-        let (rows, csv_details) = rows_with_valid();
-
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("parent").join("child.csv");
+        let (csv_details, path) = rows_with_valid(dir.path().join("create_parent_dir.csv"));
+        let out_path = dir.path().join("parent").join("child.csv");
 
-        save_valid_file(rows, &csv_details, b',', &path).unwrap();
+        save_valid_file(path, &csv_details, ",", "utf-8", &out_path).unwrap();
 
-        let file = fs::read_to_string(path).unwrap();
+        let file = fs::read_to_string(out_path).unwrap();
 
         assert_eq!(file, "a,b\n\"\"\"quoted\"\"\",row\n")
     }

@@ -12,13 +12,13 @@ def test_kitchen_sink():
 
     assert result
     assert result.column_count == 2
+    assert result.row_count == 7
     assert result.all_empty_rows == [1, 2, 3]
     assert result.quoted_delimiter == [4]
     assert result.quoted_newline == [5]
     assert result.quoted_quote == [6, 7]
     assert result.quoted_quote_correctly == [6]
     assert result.incorrect_cell_quote == [7]
-    assert result.row_count == 7
     assert result.too_few_columns == [8]
     assert result.too_many_columns == [9]
     assert result.column_count_per_line == [2, 2, 2, 1, 2, 2, 2, 2, 1, 3]
