@@ -1,11 +1,8 @@
-use std::{cmp::Ordering, path::Path};
+use std::{cmp::Ordering, io, path::Path};
 
 use crate::{
-    cell::Cell,
-    csv_details::CSVDetails,
-    error::CSVError,
-    parser::parse_file,
-    valid_file::{get_delimiter_as_byte, save_valid_file},
+    cell::Cell, csv_details::CSVDetails, error::CSVError, parser::parse_file,
+    valid_file::save_valid_file,
 };
 
 /// Check the file located at `path`, interpreting the file with `delimiter` and `encoding`.
@@ -16,35 +13,34 @@ pub fn check_file(
     encoding: &str,
     valid_rows_output_path: Option<&str>,
 ) -> Result<CSVDetails, CSVError> {
-    let rows = parse_file(path, delimiter, encoding)?;
+    let rows = parse_file(&path, delimiter, encoding)?;
 
-    let csv_details = check_rows(&rows, delimiter);
+    let csv_details = check_rows(rows, delimiter)?;
 
     if let Some(valid_rows_path) = valid_rows_output_path {
-        save_valid_file(
-            rows,
-            &csv_details,
-            get_delimiter_as_byte(delimiter)?,
-            valid_rows_path,
-        )?
+        save_valid_file(&path, &csv_details, delimiter, encoding, valid_rows_path)?
     }
 
     Ok(csv_details)
 }
 
-fn check_rows(rows: &[Vec<Cell>], delimiter: &str) -> CSVDetails {
+fn check_rows(
+    rows: impl Iterator<Item = io::Result<Vec<Cell>>>,
+    delimiter: &str,
+) -> Result<CSVDetails, CSVError> {
     let mut csv_details = CSVDetails::new();
 
-    for (i, cells) in rows.iter().enumerate() {
+    for (i, cells_result) in rows.enumerate() {
+        let cells = cells_result?;
         csv_details.column_count_per_line.push(cells.len());
         if i == 0 {
             csv_details.column_count = cells.len()
         }
 
-        check_row(&mut csv_details, cells, delimiter, i);
+        check_row(&mut csv_details, &cells, delimiter, i);
     }
 
-    csv_details
+    Ok(csv_details)
 }
 
 fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, delimiter: &str, row_number: usize) {
