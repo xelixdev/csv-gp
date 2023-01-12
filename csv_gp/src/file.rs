@@ -8,13 +8,15 @@ use crate::error::{CSVError, UnknownEncoding};
 pub(crate) fn read_encoded_file(
     filename: impl AsRef<Path>,
     encoding: &str,
-) -> Result<impl io::Read, CSVError> {
+) -> Result<impl io::BufRead, CSVError> {
     let file = File::open(filename)?;
 
     if let Some(encoding) = Encoding::for_label(encoding.as_bytes()) {
-        Ok(DecodeReaderBytesBuilder::new()
-            .encoding(Some(encoding))
-            .build(file))
+        Ok(io::BufReader::new(
+            DecodeReaderBytesBuilder::new()
+                .encoding(Some(encoding))
+                .build(file),
+        ))
     } else {
         Err(UnknownEncoding::new(encoding.into()).into())
     }
