@@ -1,7 +1,10 @@
 use std::collections::HashSet;
 
 use ::csv_gp::{csv_details::CSVDetails, error::CSVError};
+use error::until_err;
 use pyo3::{exceptions::PyValueError, prelude::*};
+
+mod error;
 
 // Results struct wrapper
 #[pyclass(name = "CSVDetails", module = "csv_gp")]
@@ -118,18 +121,20 @@ fn get_rows(
     delimiter: &str,
     encoding: &str,
     row_numbers: HashSet<usize>,
-) -> Result<Vec<Vec<String>>, PyCSVError> {
+) -> Result<Vec<(usize, Vec<String>)>, PyCSVError> {
     let lines = ::csv_gp::parser::parse_file(path, delimiter, encoding)?;
 
-    Ok(lines
+    let mut err = Ok(());
+
+    let filtered = lines
+        .scan(&mut err, until_err)
         .enumerate()
         .filter(|(i, _)| row_numbers.contains(i))
-        .map(|x| x.1)
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(Into::<CSVError>::into)?
-        .into_iter()
-        .map(|x| x.into_iter().map(|y| y.to_string()).collect())
-        .collect())
+        .map(|(i, x)| (i, x.into_iter().map(|y| y.to_string()).collect()))
+        .collect();
+    err.map_err(Into::<CSVError>::into)?;
+
+    Ok(filtered)
 }
 
 #[pymodule]

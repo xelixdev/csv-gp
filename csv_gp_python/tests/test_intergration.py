@@ -84,4 +84,4 @@ def test_get_rows():
     result = csv_gp.get_rows(str(FIXTURES / "kitchen_sink.csv"), ",", encoding="utf-8", row_numbers={0, 1, 3})
 
     assert len(result) == 3
-    assert result == [["a", "b"], ["", ""], [""]]
+    assert result == [(0, ["a", "b"]), (1, ["", ""]), (3, [""])]
