@@ -101,3 +101,9 @@ def check_file(path: str, delimiter: str, encoding: str, valid_rows_output_path:
     If `valid_rows_output_path` is passed, a file containing the valid rows will be written to the specified path
     """
     ...
+
+def get_rows(path: str, delimiter: str, encoding: str, row_numbers: set[int]) -> list[list[str]]:
+    """
+    Returns all the rows in the file in the `row_numbers` set
+    """
+    ...

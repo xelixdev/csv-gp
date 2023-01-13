@@ -78,3 +78,10 @@ def test_output_file():
 
         assert result
         assert temp_file.read() == (FIXTURES / "kitchen_sink_valid.csv").read_bytes()
+
+
+def test_get_rows():
+    result = csv_gp.get_rows(str(FIXTURES / "kitchen_sink.csv"), ",", encoding="utf-8", row_numbers={0, 1, 3})
+
+    assert len(result) == 3
+    assert result == [["a", "b"], ["", ""], [""]]

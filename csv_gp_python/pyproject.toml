@@ -13,7 +13,7 @@ classifiers = [
 
 [tool.poetry]
 name = "csv-gp"
-version = "0.1.3"
+version = "0.1.4"
 description = ""
 authors = ["Rob Hales <rob.hales@xelix.com>"]
 
