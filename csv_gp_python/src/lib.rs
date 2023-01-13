@@ -112,9 +112,30 @@ fn check_file(
     Ok(PyCSVDetails::new(result))
 }
 
+#[pyfunction]
+fn get_rows(
+    path: String,
+    delimiter: &str,
+    encoding: &str,
+    row_numbers: HashSet<usize>,
+) -> Result<Vec<Vec<String>>, PyCSVError> {
+    let lines = ::csv_gp::parser::parse_file(path, delimiter, encoding)?;
+
+    Ok(lines
+        .enumerate()
+        .filter(|(i, _)| row_numbers.contains(i))
+        .map(|x| x.1)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(Into::<CSVError>::into)?
+        .into_iter()
+        .map(|x| x.into_iter().map(|y| y.to_string()).collect())
+        .collect())
+}
+
 #[pymodule]
 fn csv_gp(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(check_file, m)?)?;
+    m.add_function(wrap_pyfunction!(get_rows, m)?)?;
     m.add_class::<PyCSVDetails>()?;
     Ok(())
 }

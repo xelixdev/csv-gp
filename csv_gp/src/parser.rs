@@ -110,7 +110,7 @@ fn parse_cells(row: &str, delimiter: &str) -> io::Result<Vec<Cell>> {
     Ok(cells)
 }
 
-pub(crate) fn parse_file<'a>(
+pub fn parse_file<'a>(
     filename: impl AsRef<Path> + 'a,
     delimiter: &'a str,
     encoding: &'a str,
