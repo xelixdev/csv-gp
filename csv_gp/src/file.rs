@@ -1,9 +1,9 @@
+use crate::error::{CSVError, UnknownEncoding};
+
 use std::{fs::File, io, path::Path};
 
 use encoding_rs::Encoding;
 use encoding_rs_io::DecodeReaderBytesBuilder;
-
-use crate::error::{CSVError, UnknownEncoding};
 
 pub(crate) fn read_encoded_file(
     filename: impl AsRef<Path>,
@@ -18,6 +18,8 @@ pub(crate) fn read_encoded_file(
                 .build(file),
         ))
     } else {
-        Err(UnknownEncoding::new(encoding.into()).into())
+        Err(CSVError::UnknownEncoding(UnknownEncoding::Encoding(
+            encoding.into(),
+        )))
     }
 }
