@@ -13,7 +13,7 @@ struct Arguments {
     #[clap(short, long)]
     correct_rows_path: Option<String>,
     #[clap(default_value = ",", short, long)]
-    delimiter: String,
+    delimiter: char,
     #[clap(default_value = "utf-8", short, long)]
     encoding: String,
 }
@@ -25,7 +25,7 @@ fn main() {
 
     let result = check_file(
         args.file_path,
-        &args.delimiter,
+        args.delimiter,
         &args.encoding,
         args.correct_rows_path.as_deref(),
     );
