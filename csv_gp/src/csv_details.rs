@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Display};
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, Default)]
 pub struct CSVDetails {
@@ -38,21 +38,7 @@ pub struct CSVDetails {
 
 impl CSVDetails {
     pub fn new() -> Self {
-        Self {
-            row_count: 0,
-            column_count: 0,
-            invalid_character_count: 0,
-            column_count_per_line: Vec::new(),
-            too_few_columns: Vec::new(),
-            too_many_columns: Vec::new(),
-            quoted_delimiter: Vec::new(),
-            quoted_newline: Vec::new(),
-            quoted_quote: Vec::new(),
-            quoted_quote_correctly: Vec::new(),
-            incorrect_cell_quote: Vec::new(),
-            all_empty_rows: Vec::new(),
-            valid_rows: HashSet::new(),
-        }
+        Default::default()
     }
 
     /// The header is considered messed up when none of the rows have the same number of columns as the header
@@ -60,80 +46,78 @@ impl CSVDetails {
         let bad_row_count = self.too_few_columns.len() + self.too_many_columns.len();
         self.row_count - 1 == bad_row_count
     }
-}
 
-impl Display for CSVDetails {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut strings = vec![];
+    pub fn report(&self) -> String {
+        let mut results = String::new();
 
         if self.header_messed_up() {
-            strings.push("The header is totally messed up, no rows have the same number of columns as the header.".to_string());
+            results += "The header is totally messed up, no rows have the same number of columns as the header.\n";
         }
 
         if self.row_count <= 1 {
-            strings.push("There is only one row row in the file.".to_string());
-            return write!(f, "{}", strings.join("\n"));
+            results += "There is only one row in the file.";
+            return results;
         }
 
         if self.column_count <= 1 {
-            strings.push(format!(
+            results += &format!(
                 "There is {} columns in the file, so the delimiter is almost surely wrong.",
                 self.column_count
-            ));
-            return write!(f, "{}", strings.join("\n"));
+            );
+            return results;
         }
 
-        strings.push(format!(
-            "There are {} rows in the file (including header), with {} columns (according to the header).",
+        results += &format!(
+            "There are {} rows in the file (including header), with {} columns (according to the header).\n",
             self.row_count, self.column_count
-        ));
+        );
 
         if !self.too_few_columns.is_empty() || !self.too_many_columns.is_empty() {
-            strings.push(format!(
-                "There are {} rows with too many columns, and {} rows with too few columns.",
+            results += &format!(
+                "There are {} rows with too many columns, and {} rows with too few columns.\n",
                 self.too_many_columns.len(),
                 self.too_few_columns.len()
-            ));
+            );
         } else {
-            strings.push("All rows have the same number of columns.".to_string());
+            results += "All rows have the same number of columns.\n";
         }
 
         if !self.quoted_delimiter.is_empty() {
-            strings.push(format!(
-                "There are {} lines with correctly quoted delimiter.",
+            results += &format!(
+                "There are {} lines with correctly quoted delimiter.\n",
                 self.quoted_delimiter.len()
-            ));
+            );
         } else {
-            strings.push("There are no rows with correctly quoted delimiter.".to_string());
+            results += "There are no rows with correctly quoted delimiter.\n";
         }
 
         if !self.quoted_newline.is_empty() {
-            strings.push(format!(
-                "There are {} lines with correctly quoted newline.",
+            results += &format!(
+                "There are {} lines with correctly quoted newline.\n",
                 self.quoted_newline.len()
-            ));
+            );
         } else {
-            strings.push("There are no rows with correctly quoted newline.".to_string());
+            results += "There are no rows with correctly quoted newline.\n";
         }
 
         if !self.quoted_quote.is_empty() {
-            strings.push(format!(
-                "There are {} lines with correctly quoted quote, out of that {} are absolutely correct.",
+            results += &format!(
+                "There are {} lines with correctly quoted quote, out of that {} are absolutely correct.\n",
                 self.quoted_quote.len(), self.quoted_quote_correctly.len()
-            ));
+            );
         } else {
-            strings.push("There are no rows with correctly quoted quote.".to_string())
+            results += "There are no rows with correctly quoted quote.\n";
         }
 
         if !self.incorrect_cell_quote.is_empty() {
-            strings.push(format!(
-                "There are {} lines with incorrect cell quotes.",
+            results += &format!(
+                "There are {} lines with incorrect cell quotes.\n",
                 self.incorrect_cell_quote.len()
-            ));
+            );
         } else {
-            strings.push("There are no rows with incorrect cell quotes.".to_string());
+            results += "There are no rows with incorrect cell quotes.\n";
         }
 
-        write!(f, "{}", strings.join("\n"))
+        results
     }
 }

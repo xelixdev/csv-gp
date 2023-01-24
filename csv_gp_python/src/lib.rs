@@ -107,7 +107,7 @@ impl From<CSVError> for PyCSVError {
 #[pyfunction]
 fn check_file(
     path: String,
-    delimiter: &str,
+    delimiter: char,
     encoding: &str,
     valid_rows_output_path: Option<&str>,
 ) -> Result<PyCSVDetails, PyCSVError> {
@@ -118,7 +118,7 @@ fn check_file(
 #[pyfunction]
 fn get_rows(
     path: String,
-    delimiter: &str,
+    delimiter: char,
     encoding: &str,
     row_numbers: HashSet<usize>,
 ) -> Result<Vec<(usize, Vec<String>)>, PyCSVError> {

@@ -26,6 +26,11 @@ def test_kitchen_sink():
     assert not result.header_messed_up
 
 
+def test_invalid_delimiter():
+    with pytest.raises(ValueError):
+        csv_gp.check_file(str(FIXTURES / "kitchen_sink.csv"), ",+", encoding="utf-8")
+
+
 def test_different_encoding():
     result = csv_gp.check_file(str(FIXTURES / "mac_roman.csv"), ",", encoding="macintosh")
 

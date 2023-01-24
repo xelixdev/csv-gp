@@ -3,15 +3,12 @@ use std::{io, path::Path};
 
 struct CSVReader<R> {
     reader: R,
-    delimiter: String,
+    delimiter: char,
 }
 
 impl<R: io::BufRead> CSVReader<R> {
-    fn new(reader: R, delimiter: impl Into<String>) -> Self {
-        Self {
-            reader,
-            delimiter: delimiter.into(),
-        }
+    fn new(reader: R, delimiter: char) -> Self {
+        Self { reader, delimiter }
     }
 
     /// Returns a owned iterator of all the csv lines
@@ -22,7 +19,7 @@ impl<R: io::BufRead> CSVReader<R> {
 
 struct CSVLineIntoIter<B> {
     lines: io::Lines<B>,
-    delimiter: String,
+    delimiter: char,
 }
 
 impl<B: io::BufRead> CSVLineIntoIter<B> {
@@ -51,7 +48,7 @@ impl<B: io::BufRead> Iterator for CSVLineIntoIter<B> {
                     if current_selection.matches('"').count() % 2 == 1 {
                         current_selection.push('\n');
                     } else {
-                        return Some(parse_cells(&current_selection, &self.delimiter));
+                        return Some(parse_cells(&current_selection, self.delimiter));
                     }
                 }
             }
@@ -59,7 +56,7 @@ impl<B: io::BufRead> Iterator for CSVLineIntoIter<B> {
     }
 }
 
-fn parse_cells(row: &str, delimiter: &str) -> io::Result<Vec<Cell>> {
+fn parse_cells(row: &str, delimiter: char) -> io::Result<Vec<Cell>> {
     let chars = row.chars().collect::<Vec<_>>();
 
     let mut cells = Vec::new();
@@ -71,7 +68,7 @@ fn parse_cells(row: &str, delimiter: &str) -> io::Result<Vec<Cell>> {
         let current_char = chars[i];
         let next_char = chars.get(i + 1);
 
-        if current_char.to_string() != delimiter && current_char != '"' {
+        if current_char != delimiter && current_char != '"' {
             current_selection.push(current_char);
             i += 1;
             continue;
@@ -92,7 +89,7 @@ fn parse_cells(row: &str, delimiter: &str) -> io::Result<Vec<Cell>> {
             continue;
         }
 
-        if current_char.to_string() == delimiter {
+        if current_char == delimiter {
             if opened_quote {
                 current_selection.push(current_char);
             } else {
@@ -112,12 +109,12 @@ fn parse_cells(row: &str, delimiter: &str) -> io::Result<Vec<Cell>> {
 
 pub fn parse_file<'a>(
     filename: impl AsRef<Path> + 'a,
-    delimiter: &'a str,
+    delimiter: char,
     encoding: &'a str,
 ) -> Result<impl Iterator<Item = io::Result<Vec<Cell>>> + 'a, CSVError> {
     let reader = read_encoded_file(filename, encoding)?;
 
-    let parser = CSVReader::new(reader, delimiter.to_string());
+    let parser = CSVReader::new(reader, delimiter);
 
     Ok(parser.into_lines())
 }
@@ -129,7 +126,7 @@ mod parse_rows_tests {
     #[test]
     fn test_simple() {
         let input = "test,row\nnext,row\n".as_bytes();
-        let result = CSVReader::new(input, ",")
+        let result = CSVReader::new(input, ',')
             .into_lines()
             .collect::<Result<Vec<_>, _>>();
 
@@ -145,7 +142,7 @@ mod parse_rows_tests {
     #[test]
     fn test_no_trailing_newline() {
         let input = "test,row\nnext,row".as_bytes();
-        let result = CSVReader::new(input, ",")
+        let result = CSVReader::new(input, ',')
             .into_lines()
             .collect::<Result<Vec<_>, _>>();
 
@@ -161,7 +158,7 @@ mod parse_rows_tests {
     #[test]
     fn test_quoted_newline() {
         let input = "test,\"row\n\"\nnext,row".as_bytes();
-        let result = CSVReader::new(input, ",")
+        let result = CSVReader::new(input, ',')
             .into_lines()
             .collect::<Result<Vec<_>, _>>();
 
@@ -177,7 +174,7 @@ mod parse_rows_tests {
     #[test]
     fn test_quoted_quote() {
         let input = "test,\"\"\"row\"\"\"\nnext,row".as_bytes();
-        let result = CSVReader::new(input, ",")
+        let result = CSVReader::new(input, ',')
             .into_lines()
             .collect::<Result<Vec<_>, _>>();
 
@@ -193,7 +190,7 @@ mod parse_rows_tests {
     #[test]
     fn test_blank_row() {
         let input = "test,row\n\nnext,row".as_bytes();
-        let result = CSVReader::new(input, ",")
+        let result = CSVReader::new(input, ',')
             .into_lines()
             .collect::<Result<Vec<_>, _>>();
 
@@ -216,7 +213,7 @@ mod parse_cells_tests {
     fn test_simple() {
         let input = "test,row";
         assert_eq!(
-            parse_cells(input, ",").unwrap(),
+            parse_cells(input, ',').unwrap(),
             vec![Cell::new("test"), Cell::new("row")]
         )
     }
@@ -226,7 +223,7 @@ mod parse_cells_tests {
         let input = "test,\"row\n\"";
 
         assert_eq!(
-            parse_cells(input, ",").unwrap(),
+            parse_cells(input, ',').unwrap(),
             vec![Cell::new("test"), Cell::new("\"row\n\"")]
         )
     }
@@ -236,7 +233,7 @@ mod parse_cells_tests {
         let input = "test,\"\"\"row\"\"\"";
 
         assert_eq!(
-            parse_cells(input, ",").unwrap(),
+            parse_cells(input, ',').unwrap(),
             vec![Cell::new("test"), Cell::new("\"\"\"row\"\"\"")]
         )
     }
@@ -246,7 +243,7 @@ mod parse_cells_tests {
         let input = "test,\"row,\"";
 
         assert_eq!(
-            parse_cells(input, ",").unwrap(),
+            parse_cells(input, ',').unwrap(),
             vec![Cell::new("test"), Cell::new("\"row,\"")]
         )
     }
