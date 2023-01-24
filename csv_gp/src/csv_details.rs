@@ -38,21 +38,7 @@ pub struct CSVDetails {
 
 impl CSVDetails {
     pub fn new() -> Self {
-        Self {
-            row_count: 0,
-            column_count: 0,
-            invalid_character_count: 0,
-            column_count_per_line: Vec::new(),
-            too_few_columns: Vec::new(),
-            too_many_columns: Vec::new(),
-            quoted_delimiter: Vec::new(),
-            quoted_newline: Vec::new(),
-            quoted_quote: Vec::new(),
-            quoted_quote_correctly: Vec::new(),
-            incorrect_cell_quote: Vec::new(),
-            all_empty_rows: Vec::new(),
-            valid_rows: HashSet::new(),
-        }
+        Default::default()
     }
 
     /// The header is considered messed up when none of the rows have the same number of columns as the header
