@@ -15,15 +15,15 @@ impl Cell {
 
         let mut starts = false;
         let mut ends = false;
-        let mut stripped = self.0.clone();
+        let mut stripped: &str = &self.0;
 
         if let Some(s) = stripped.strip_prefix('"') {
-            stripped = s.to_string();
+            stripped = s;
             starts = true;
         }
 
         if let Some(s) = stripped.strip_suffix('"') {
-            stripped = s.to_string();
+            stripped = s;
             ends = true;
         }
 
@@ -35,7 +35,7 @@ impl Cell {
             return true;
         }
 
-        !stripped.replace("\"\"", "").contains('"')
+        stripped.matches("\"\"").count() * 2 == stripped.matches('\"').count()
     }
 
     pub fn is_empty(&self) -> bool {
