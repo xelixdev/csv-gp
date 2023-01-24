@@ -34,11 +34,11 @@ fn main() {
 
     match result {
         Err(e) => {
-            println!("{}", e);
+            eprintln!("{}", e);
             exit(1)
         }
         Ok(r) => {
-            println!("{}", r);
+            println!("{}", r.report());
             if let Some(path) = args.correct_rows_path {
                 println!("Correct rows were saved to {}", path.display())
             }
