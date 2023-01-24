@@ -1,4 +1,4 @@
-use std::{process::exit, time::Instant};
+use std::{path::PathBuf, process::exit, time::Instant};
 
 use clap::Parser;
 
@@ -8,10 +8,10 @@ use csv_gp::checker::check_file;
 #[derive(Parser, Default, Debug)]
 struct Arguments {
     /// Path to file to check
-    file_path: String,
+    file_path: PathBuf,
     /// Path to output the correct rows in the file to
     #[clap(short, long)]
-    correct_rows_path: Option<String>,
+    correct_rows_path: Option<PathBuf>,
     #[clap(default_value = ",", short, long)]
     delimiter: char,
     #[clap(default_value = "utf-8", short, long)]
@@ -40,7 +40,7 @@ fn main() {
         Ok(r) => {
             println!("{}", r);
             if let Some(path) = args.correct_rows_path {
-                println!("Correct rows were saved to {}", path)
+                println!("Correct rows were saved to {}", path.display())
             }
         }
     }

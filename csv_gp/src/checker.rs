@@ -11,7 +11,7 @@ pub fn check_file(
     path: impl AsRef<Path>,
     delimiter: char,
     encoding: &str,
-    valid_rows_output_path: Option<&str>,
+    valid_rows_output_path: Option<impl AsRef<Path>>,
 ) -> Result<CSVDetails, CSVError> {
     let rows = parse_file(&path, delimiter, encoding)?;
 
