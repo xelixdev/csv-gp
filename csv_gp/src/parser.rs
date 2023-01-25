@@ -1,4 +1,5 @@
 use crate::{cell::Cell, error::CSVError, file::read_encoded_file};
+use fancy_regex::Regex;
 use std::{io, path::Path};
 
 struct CSVReader<R> {
@@ -20,6 +21,7 @@ impl<R: io::BufRead> CSVReader<R> {
 struct CSVLineIntoIter<B> {
     lines: io::Lines<B>,
     delimiter: char,
+    cell_boundary_quote_regex: Regex,
 }
 
 impl<B: io::BufRead> CSVLineIntoIter<B> {
@@ -27,6 +29,14 @@ impl<B: io::BufRead> CSVLineIntoIter<B> {
         Self {
             lines: reader.reader.lines(),
             delimiter: reader.delimiter,
+            cell_boundary_quote_regex: Regex::new(
+                format!(
+                    "(^\")|(\"$)|(\"(?={delim}))|((?<={delim})\")",
+                    delim = reader.delimiter,
+                )
+                .as_str(),
+            )
+            .unwrap(),
         }
     }
 }
@@ -39,13 +49,24 @@ impl<B: io::BufRead> Iterator for CSVLineIntoIter<B> {
 
         loop {
             match self.lines.next() {
-                None => return None,
+                None => {
+                    // in the case of a dangling quote current selection will be non-empty
+                    if !current_selection.is_empty() {
+                        return Some(parse_cells(&current_selection, self.delimiter));
+                    } else {
+                        return None;
+                    }
+                }
                 Some(Err(e)) => return Some(Err(e)),
                 Some(Ok(line)) => {
                     current_selection.push_str(&line);
 
-                    // if there is an odd number of quotes in the current string, the newline is in quotes
-                    if current_selection.matches('"').count() % 2 == 1 {
+                    // if there is an odd number of boundary quotes in the current string, the newline is in quotes
+                    let matches = self
+                        .cell_boundary_quote_regex
+                        .find_iter(&current_selection)
+                        .count();
+                    if matches % 2 == 1 {
                         current_selection.push('\n');
                     } else {
                         return Some(parse_cells(&current_selection, self.delimiter));
@@ -200,6 +221,39 @@ mod parse_rows_tests {
                 vec![Cell::new("test"), Cell::new("row")],
                 vec![Cell::new("")],
                 vec![Cell::new("next"), Cell::new("row")],
+            ]
+        );
+    }
+
+    #[test]
+    fn test_dangling_quote() {
+        let input = "test,row\n\"next,row".as_bytes();
+        let result = CSVReader::new(input, ',')
+            .into_lines()
+            .collect::<Result<Vec<_>, _>>();
+
+        assert_eq!(
+            result.unwrap(),
+            vec![
+                vec![Cell::new("test"), Cell::new("row")],
+                vec![Cell::new("\"next,row\n")],
+            ]
+        );
+    }
+
+    #[test]
+    fn test_unescaped_cell_quote_does_not_consume_rest_of_rows() {
+        let input = "test,row\n\"ne\"xt\",row\nfinal,row".as_bytes();
+        let result = CSVReader::new(input, ',')
+            .into_lines()
+            .collect::<Result<Vec<_>, _>>();
+
+        assert_eq!(
+            result.unwrap(),
+            vec![
+                vec![Cell::new("test"), Cell::new("row")],
+                vec![Cell::new("\"ne\"xt\",row")],
+                vec![Cell::new("final"), Cell::new("row")],
             ]
         );
     }
