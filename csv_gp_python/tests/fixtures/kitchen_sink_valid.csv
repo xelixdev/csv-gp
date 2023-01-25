@@ -1,4 +1,6 @@
 a,b
+,
+"",
 "test,",with delim
 "test
 ",with newline

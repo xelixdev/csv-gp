@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 #[derive(Debug, Clone, Default)]
 pub struct CSVDetails {
-    /// Number of non-empty rows (including the header) in the file
+    /// Number of non-blank rows (including the header) in the file
     pub row_count: usize,
     /// Number of columns according to the header
     pub column_count: usize,
@@ -27,11 +27,10 @@ pub struct CSVDetails {
     ///     - Missing an opening or closing quote
     ///     - Containing unquoted quotes
     pub incorrect_cell_quote: Vec<usize>,
-    /// List of line numbers that contain no data
-    /// A row is considered empty if either:
-    ///     - it contains zero cells
-    ///     - all cells in the row are empty (either zero characters or just `""`)
+    /// List of line numbers where all cells in the row are empty (either zero characters or just `""`)
     pub all_empty_rows: Vec<usize>,
+    /// List of line numbers that are completely blank
+    pub blank_rows: Vec<usize>,
     /// Set of all row numbers that are valid in the file
     pub valid_rows: HashSet<usize>,
 }
@@ -68,8 +67,8 @@ impl CSVDetails {
         }
 
         results += &format!(
-            "There are {} rows in the file (including header), with {} columns (according to the header).\n",
-            self.row_count, self.column_count
+            "There are {} ({} of which are valid) rows in the file (including header), with {} columns (according to the header).\n",
+            self.row_count, self.valid_rows.len(), self.column_count
         );
 
         if !self.too_few_columns.is_empty() || !self.too_many_columns.is_empty() {
@@ -80,6 +79,17 @@ impl CSVDetails {
             );
         } else {
             results += "All rows have the same number of columns.\n";
+        }
+
+        if !self.blank_rows.is_empty() {
+            results += &format!("There are {} blank rows.\n", self.blank_rows.len());
+        }
+
+        if !self.all_empty_rows.is_empty() {
+            results += &format!(
+                "There are {} rows where all the cells are empty.\n",
+                self.all_empty_rows.len()
+            );
         }
 
         if !self.quoted_delimiter.is_empty() {

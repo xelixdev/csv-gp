@@ -78,6 +78,10 @@ impl<B: io::BufRead> Iterator for CSVLineIntoIter<B> {
 }
 
 fn parse_cells(row: &str, delimiter: char) -> io::Result<Vec<Cell>> {
+    if row.is_empty() {
+        return Ok(Vec::new());
+    }
+
     let chars = row.chars().collect::<Vec<_>>();
 
     let mut cells = Vec::new();
@@ -219,7 +223,24 @@ mod parse_rows_tests {
             result.unwrap(),
             vec![
                 vec![Cell::new("test"), Cell::new("row")],
-                vec![Cell::new("")],
+                vec![],
+                vec![Cell::new("next"), Cell::new("row")],
+            ]
+        );
+    }
+
+    #[test]
+    fn test_empty_row() {
+        let input = "test,row\n,\nnext,row".as_bytes();
+        let result = CSVReader::new(input, ',')
+            .into_lines()
+            .collect::<Result<Vec<_>, _>>();
+
+        assert_eq!(
+            result.unwrap(),
+            vec![
+                vec![Cell::new("test"), Cell::new("row")],
+                vec![Cell::new(""), Cell::new("")],
                 vec![Cell::new("next"), Cell::new("row")],
             ]
         );
@@ -300,5 +321,10 @@ mod parse_cells_tests {
             parse_cells(input, ',').unwrap(),
             vec![Cell::new("test"), Cell::new("\"row,\"")]
         )
+    }
+
+    #[test]
+    fn test_empty() {
+        assert_eq!(parse_cells("", ',').unwrap(), vec![])
     }
 }

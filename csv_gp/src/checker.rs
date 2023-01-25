@@ -44,6 +44,8 @@ fn check_rows(
 }
 
 fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, delimiter: char, row_number: usize) {
+    let blank_row = cells.is_empty();
+
     // Cell checks
     let mut all_correctly_quoted = true;
 
@@ -51,7 +53,7 @@ fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, delimiter: char, r
     let mut has_quoted_newline = false;
     let mut has_quoted_delimiter = false;
 
-    let mut empty = true;
+    let mut all_empty = true;
 
     for cell in cells {
         all_correctly_quoted &= cell.correctly_quoted();
@@ -60,7 +62,7 @@ fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, delimiter: char, r
         has_quoted_newline |= cell.contains("\n");
         has_quoted_delimiter |= cell.contains(&delimiter.to_string());
 
-        empty &= cell.is_empty();
+        all_empty &= cell.is_empty();
         csv_details.invalid_character_count += cell.invalid_character_count();
     }
 
@@ -68,7 +70,7 @@ fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, delimiter: char, r
     let mut too_many_columns = false;
     let mut too_few_columns = false;
 
-    if !empty {
+    if !blank_row {
         match cells.len().cmp(&csv_details.column_count) {
             Ordering::Greater => too_many_columns = true,
             Ordering::Less => too_few_columns = true,
@@ -92,8 +94,12 @@ fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, delimiter: char, r
         csv_details.quoted_delimiter.push(row_number);
     }
 
-    if empty {
+    if all_empty && !blank_row {
         csv_details.all_empty_rows.push(row_number);
+    }
+
+    if blank_row {
+        csv_details.blank_rows.push(row_number);
     } else {
         csv_details.row_count += 1;
     }
@@ -110,13 +116,15 @@ fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, delimiter: char, r
         csv_details.too_many_columns.push(row_number);
     }
 
-    if all_correctly_quoted && !too_few_columns && !too_many_columns && !empty {
+    if all_correctly_quoted && !too_few_columns && !too_many_columns && !blank_row {
         csv_details.valid_rows.insert(row_number);
     }
 }
 
 #[cfg(test)]
 mod check_row_tests {
+    use std::collections::HashSet;
+
     use super::*;
 
     #[test]
@@ -201,6 +209,7 @@ mod check_row_tests {
     #[test]
     fn test_all_empty() {
         let mut csv_details = CSVDetails::new();
+        csv_details.column_count = 2;
 
         check_row(
             &mut csv_details,
@@ -216,7 +225,28 @@ mod check_row_tests {
         );
 
         assert_eq!(csv_details.all_empty_rows, vec![1]);
+        assert_eq!(csv_details.blank_rows, vec![]);
+        assert_eq!(csv_details.row_count, 2);
+        assert_eq!(csv_details.valid_rows, HashSet::from([0, 1]));
+    }
+
+    #[test]
+    fn test_blank_row() {
+        let mut csv_details = CSVDetails::new();
+        csv_details.column_count = 2;
+
+        check_row(
+            &mut csv_details,
+            &vec![Cell::new("test"), Cell::new("")],
+            ',',
+            0,
+        );
+        check_row(&mut csv_details, &vec![], ',', 1);
+
+        assert_eq!(csv_details.all_empty_rows, vec![]);
+        assert_eq!(csv_details.blank_rows, vec![1]);
         assert_eq!(csv_details.row_count, 1);
         assert_eq!(csv_details.too_few_columns, vec![]);
+        assert_eq!(csv_details.valid_rows, HashSet::from([0]));
     }
 }
