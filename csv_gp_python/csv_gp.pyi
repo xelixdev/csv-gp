@@ -74,11 +74,13 @@ class CSVDetails:
     @property
     def all_empty_rows(self) -> list[int]:
         """
-        List of line numbers that contain no data
-
-        A row is considered empty if either:
-            - it contains zero cells
-            - all cells in the row are empty (either zero characters or just `""`)
+        List of line numbers where all cells in the row are empty (either zero characters or just `""`)
+        """
+        ...
+    @property
+    def blank_rows(self) -> list[int]:
+        """
+        List of line numbers that are completely blank
         """
         ...
     @property

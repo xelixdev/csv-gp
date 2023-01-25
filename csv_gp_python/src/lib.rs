@@ -79,6 +79,11 @@ impl PyCSVDetails {
     }
 
     #[getter]
+    fn blank_rows(&self) -> Vec<usize> {
+        self.0.blank_rows.clone()
+    }
+
+    #[getter]
     fn valid_rows(&self) -> HashSet<usize> {
         self.0.valid_rows.clone()
     }
