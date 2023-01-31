@@ -34,7 +34,7 @@ fn main() {
 
     match result {
         Err(e) => {
-            eprintln!("{}", e);
+            eprintln!("{e}");
             exit(1)
         }
         Ok(r) => {
