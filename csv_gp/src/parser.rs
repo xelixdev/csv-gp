@@ -1,5 +1,5 @@
 use crate::{cell::Cell, error::CSVError, file::read_encoded_file};
-use fancy_regex::Regex;
+use regex::Regex;
 use std::{io, path::Path};
 
 struct CSVReader<R> {
@@ -31,7 +31,7 @@ impl<B: io::BufRead> CSVLineIntoIter<B> {
             delimiter: reader.delimiter,
             cell_boundary_quote_regex: Regex::new(
                 format!(
-                    "(^\")|(\"$)|(\"(?={delim}))|((?<={delim})\")",
+                    "(^\")|(\"$)|(\"(?:{delim}))|((?:{delim})\")",
                     delim = reader.delimiter,
                 )
                 .as_str(),
@@ -207,6 +207,22 @@ mod parse_rows_tests {
             result.unwrap(),
             vec![
                 vec![Cell::new("test"), Cell::new("\"\"\"row\"\"\"")],
+                vec![Cell::new("next"), Cell::new("row")],
+            ]
+        );
+    }
+
+    #[test]
+    fn test_quoted_delimiter() {
+        let input = "test,\"row,\"\nnext,row".as_bytes();
+        let result = CSVReader::new(input, ',')
+            .into_lines()
+            .collect::<Result<Vec<_>, _>>();
+
+        assert_eq!(
+            result.unwrap(),
+            vec![
+                vec![Cell::new("test"), Cell::new("\"row,\"")],
                 vec![Cell::new("next"), Cell::new("row")],
             ]
         );
