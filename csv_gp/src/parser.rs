@@ -1,5 +1,4 @@
 use crate::{cell::Cell, error::CSVError, file::read_encoded_file};
-use regex::Regex;
 use std::{io, path::Path};
 
 struct CSVReader<R> {
@@ -21,7 +20,6 @@ impl<R: io::BufRead> CSVReader<R> {
 struct CSVLineIntoIter<B> {
     lines: io::Lines<B>,
     delimiter: char,
-    cell_boundary_quote_regex: Regex,
 }
 
 impl<B: io::BufRead> CSVLineIntoIter<B> {
@@ -29,16 +27,35 @@ impl<B: io::BufRead> CSVLineIntoIter<B> {
         Self {
             lines: reader.reader.lines(),
             delimiter: reader.delimiter,
-            cell_boundary_quote_regex: Regex::new(
-                format!(
-                    "(^\")|(\"$)|(\"(?:{delim}))|((?:{delim})\")",
-                    delim = reader.delimiter,
-                )
-                .as_str(),
-            )
-            .unwrap(),
         }
     }
+}
+
+/// Determines if a passed string has fully closed quotes or not
+fn has_open_quotes(s: &str, delimiter: char) -> bool {
+    let mut is_open = false;
+    let mut prev_char: Option<char> = None;
+
+    let mut chars = s.chars().peekable();
+    while let Some(current_char) = chars.next() {
+        match (prev_char, current_char, chars.peek()) {
+            // If there's a quoted-quote skip it
+            (_, '"', Some('"')) => (),
+            // Quote at beginning of line
+            (None, '"', _) => is_open = true,
+            // Quote at the end of the string
+            (_, '"', None) => is_open = false,
+            // Quote followed by the delimiter (`",`)
+            (_, '"', Some(n)) if n == &delimiter => is_open = false,
+            // Quote preceded by the delimiter (`,"`)
+            (Some(c), '"', _) if c == delimiter => is_open = true,
+            _ => (),
+        }
+
+        prev_char = Some(current_char);
+    }
+
+    is_open
 }
 
 impl<B: io::BufRead> Iterator for CSVLineIntoIter<B> {
@@ -61,12 +78,7 @@ impl<B: io::BufRead> Iterator for CSVLineIntoIter<B> {
                 Some(Ok(line)) => {
                     current_selection.push_str(&line);
 
-                    // if there is an odd number of boundary quotes in the current string, the newline is in quotes
-                    let matches = self
-                        .cell_boundary_quote_regex
-                        .find_iter(&current_selection)
-                        .count();
-                    if matches % 2 == 1 {
+                    if has_open_quotes(&current_selection, self.delimiter) {
                         current_selection.push('\n');
                     } else {
                         return Some(parse_cells(&current_selection, self.delimiter));
@@ -182,7 +194,7 @@ mod parse_rows_tests {
 
     #[test]
     fn test_quoted_newline() {
-        let input = "test,\"row\n\"\nnext,row".as_bytes();
+        let input = "\"test\n\",\"broken\ncolumn\",\"another\ncolumn\"\nnext,row".as_bytes();
         let result = CSVReader::new(input, ',')
             .into_lines()
             .collect::<Result<Vec<_>, _>>();
@@ -190,7 +202,11 @@ mod parse_rows_tests {
         assert_eq!(
             result.unwrap(),
             vec![
-                vec![Cell::new("test"), Cell::new("\"row\n\"")],
+                vec![
+                    Cell::new("\"test\n\""),
+                    Cell::new("\"broken\ncolumn\""),
+                    Cell::new("\"another\ncolumn\"")
+                ],
                 vec![Cell::new("next"), Cell::new("row")],
             ]
         )
@@ -208,6 +224,22 @@ mod parse_rows_tests {
             vec![
                 vec![Cell::new("test"), Cell::new("\"\"\"row\"\"\"")],
                 vec![Cell::new("next"), Cell::new("row")],
+            ]
+        );
+    }
+
+    #[test]
+    fn test_incorrect_quoted_quote() {
+        let input = "test,\"\"row\"\"\n\"\"next\"\",row".as_bytes();
+        let result = CSVReader::new(input, ',')
+            .into_lines()
+            .collect::<Result<Vec<_>, _>>();
+
+        assert_eq!(
+            result.unwrap(),
+            vec![
+                vec![Cell::new("test"), Cell::new("\"\"row\"\"")],
+                vec![Cell::new("\"\"next\"\""), Cell::new("row")],
             ]
         );
     }
