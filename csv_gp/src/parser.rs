@@ -76,7 +76,10 @@ impl<B: io::BufRead> Iterator for CSVLineIntoIter<B> {
                 }
                 Some(Err(e)) => return Some(Err(e)),
                 Some(Ok(line)) => {
-                    current_selection.push_str(&line);
+                    // special case for strange CRLF files with \r\r\n as line break, not ideal as it will alter valid quoted sequences also but ¯\_(ツ)_/¯
+                    let line = line.trim_end_matches('\r');
+
+                    current_selection.push_str(line);
 
                     if has_open_quotes(&current_selection, self.delimiter) {
                         current_selection.push('\n');
@@ -171,6 +174,22 @@ mod parse_rows_tests {
             result.unwrap(),
             vec![
                 vec![Cell::new("test"), Cell::new("row")],
+                vec![Cell::new("next"), Cell::new("row")],
+            ]
+        )
+    }
+
+    #[test]
+    fn test_strange_crlf() {
+        let input = "test,\"row\"\r\r\nnext,row\r\r\n".as_bytes();
+        let result = CSVReader::new(input, ',')
+            .into_lines()
+            .collect::<Result<Vec<_>, _>>();
+
+        assert_eq!(
+            result.unwrap(),
+            vec![
+                vec![Cell::new("test"), Cell::new("\"row\"")],
                 vec![Cell::new("next"), Cell::new("row")],
             ]
         )
