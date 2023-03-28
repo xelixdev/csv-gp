@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use ::csv_gp::{csv_details::CSVDetails, error::CSVError};
 use error::until_err;
-use pyo3::{exceptions::PyValueError, prelude::*};
+use pyo3::{create_exception, exceptions::PyValueError, prelude::*};
 
 mod error;
 
@@ -95,11 +95,17 @@ impl PyCSVDetails {
 }
 
 // Error wrapper
+
+create_exception!(csv_gp, PyUnknownEncoding, pyo3::exceptions::PyException);
+
 struct PyCSVError(CSVError);
 
 impl From<PyCSVError> for PyErr {
     fn from(e: PyCSVError) -> Self {
-        PyValueError::new_err(e.0.to_string())
+        match e.0 {
+            CSVError::UnknownEncoding(x) => PyUnknownEncoding::new_err(x.to_string()),
+            x => PyValueError::new_err(x.to_string()),
+        }
     }
 }
 
@@ -143,9 +149,10 @@ fn get_rows(
 }
 
 #[pymodule]
-fn csv_gp(_py: Python, m: &PyModule) -> PyResult<()> {
+fn csv_gp(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(check_file, m)?)?;
     m.add_function(wrap_pyfunction!(get_rows, m)?)?;
     m.add_class::<PyCSVDetails>()?;
+    m.add("UnknownEncoding", py.get_type::<PyUnknownEncoding>())?;
     Ok(())
 }

@@ -90,3 +90,8 @@ def test_get_rows():
 
     assert len(result) == 3
     assert result == [(0, ["a", "b"]), (1, ["", ""]), (3, [])]
+
+
+def test_unknown_encoding():
+    with pytest.raises(csv_gp.UnknownEncoding, match="unknown encoding ibm852"):
+        csv_gp.check_file(str(FIXTURES / "kitchen_sink.csv"), ",", encoding="ibm852")

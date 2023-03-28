@@ -1,5 +1,8 @@
 from typing import Optional
 
+class UnknownEncoding(Exception):
+    pass
+
 class CSVDetails:
     @property
     def row_count(self) -> int:
