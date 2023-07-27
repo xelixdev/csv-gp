@@ -66,6 +66,7 @@ impl<B: io::BufRead> Iterator for CSVLineIntoIter<B> {
 
         loop {
             match self.lines.next() {
+                // we have reached the end of the file
                 None => {
                     // in the case of a dangling quote current selection will be non-empty
                     if !current_selection.is_empty() {
@@ -82,8 +83,10 @@ impl<B: io::BufRead> Iterator for CSVLineIntoIter<B> {
                     current_selection.push_str(line);
 
                     if has_open_quotes(&current_selection, self.delimiter) {
+                        // this newline is escaped, add back to text and continue loop
                         current_selection.push('\n');
                     } else {
+                        // we have a full csv line, parse and return
                         return Some(parse_cells(&current_selection, self.delimiter));
                     }
                 }
@@ -97,51 +100,26 @@ fn parse_cells(row: &str, delimiter: char) -> io::Result<Vec<Cell>> {
         return Ok(Vec::new());
     }
 
-    let chars = row.chars().collect::<Vec<_>>();
-
     let mut cells = Vec::new();
     let mut current_selection = String::new();
     let mut opened_quote = false;
 
-    let mut i = 0;
-    while i < chars.len() {
-        let current_char = chars[i];
-        let next_char = chars.get(i + 1);
-
-        if current_char != delimiter && current_char != '"' {
-            current_selection.push(current_char);
-            i += 1;
-            continue;
-        }
-
-        if let Some(next_char) = next_char {
-            if current_char == '"' && next_char == &'"' {
-                current_selection.push_str("\"\"");
-                i += 2;
-                continue;
+    for char in row.chars() {
+        if char == delimiter && !opened_quote {
+            // we are at the end of a cell, reset stack
+            cells.push(Cell::new(current_selection.clone()));
+            current_selection = String::new();
+        } else {
+            // ... otherwise add to the stack
+            current_selection.push(char);
+            // If we're on a quote, add to stack and flip the opened quote flag
+            if char == '"' {
+                opened_quote = !opened_quote;
             }
-        }
-
-        if current_char == '"' && (next_char.is_none() || next_char != Some(&'"')) {
-            current_selection.push('"');
-            opened_quote = !opened_quote;
-            i += 1;
-            continue;
-        }
-
-        if current_char == delimiter {
-            if opened_quote {
-                current_selection.push(current_char);
-            } else {
-                cells.push(Cell::new(current_selection.clone()));
-                current_selection = String::new();
-            }
-
-            i += 1;
-            continue;
         }
     }
 
+    // add final cell to cells
     cells.push(Cell::new(current_selection));
 
     Ok(cells)
