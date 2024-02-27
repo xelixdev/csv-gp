@@ -45,6 +45,8 @@ fn has_open_quotes(s: &str, delimiter: char) -> bool {
         match (prev_char, current_char, chars.peek()) {
             // Quote at beginning of line
             (None, '"', _) => is_open = true,
+            // Quote at the end of the string preceeded by the delimiter (`,"`), unless already open
+            (Some(c), '"', None) if c == delimiter && !is_open => is_open = true,
             // Quote at the end of the string
             (_, '"', None) => is_open = false,
             // Quote followed by the delimiter (`",`)
