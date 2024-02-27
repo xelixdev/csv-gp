@@ -10,60 +10,70 @@ class CSVDetails:
         Number of non-empty rows (including the header) in the file
         """
         ...
+
     @property
     def column_count(self) -> int:
         """
         Number of columns according to the header
         """
         ...
+
     @property
     def invalid_character_count(self) -> int:
         """
         Number of REPLACEMENT CHARACTERs (U+FFFD) in the file
         """
         ...
+
     @property
     def column_count_per_line(self) -> list[int]:
         """
         Number of columns per line, the index corresponding to the line number
         """
         ...
+
     @property
     def too_few_columns(self) -> list[int]:
         """
         List of line numbers that contain fewer columns than the header
         """
         ...
+
     @property
     def too_many_columns(self) -> list[int]:
         """
         List of line numbers that contain more columns than the header
         """
         ...
+
     @property
     def quoted_delimiter(self) -> list[int]:
         """
         List of line numbers that contain a correctly quoted delimiter
         """
         ...
+
     @property
     def quoted_newline(self) -> list[int]:
         """
         List of line numbers that contain a correctly quoted newline
         """
         ...
+
     @property
     def quoted_quote(self) -> list[int]:
         """
         List of line numbers that contain quoted-quotes ("")
         """
         ...
+
     @property
     def quoted_quote_correctly(self) -> list[int]:
         """
         List of line numbers that contain correctly quoted-quotes (only contained within quoted cells)
         """
         ...
+
     @property
     def incorrect_cell_quote(self) -> list[int]:
         """
@@ -74,24 +84,28 @@ class CSVDetails:
             - Containing unquoted quotes
         """
         ...
+
     @property
     def all_empty_rows(self) -> list[int]:
         """
         List of line numbers where all cells in the row are empty (either zero characters or just `""`)
         """
         ...
+
     @property
     def blank_rows(self) -> list[int]:
         """
         List of line numbers that are completely blank
         """
         ...
+
     @property
     def valid_rows(self) -> set[int]:
         """
         Set of all row numbers that are valid in the file
         """
         ...
+
     @property
     def header_messed_up(self) -> bool:
         """
