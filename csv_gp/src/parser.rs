@@ -36,11 +36,13 @@ fn has_open_quotes(s: &str, delimiter: char) -> bool {
     let mut is_open = false;
     let mut prev_char: Option<char> = None;
 
-    let mut chars = s.chars().peekable();
+    // Remove quoted quotes. Basically any two consecutive quotes can be ignored for the purposes of this
+    // function.
+    let s2 = str::replace(s, "\"\"", "");
+
+    let mut chars = s2.chars().peekable();
     while let Some(current_char) = chars.next() {
         match (prev_char, current_char, chars.peek()) {
-            // If there's a quoted-quote skip it
-            (_, '"', Some('"')) => (),
             // Quote at beginning of line
             (None, '"', _) => is_open = true,
             // Quote at the end of the string
