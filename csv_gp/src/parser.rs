@@ -138,6 +138,88 @@ pub fn parse_file<'a>(
 }
 
 #[cfg(test)]
+mod has_open_quotes_tests {
+    use super::*;
+
+    #[test]
+    fn test_empty() {
+        let input = "";
+
+        assert!(!has_open_quotes(input, ','))
+    }
+
+    #[test]
+    fn test_no_quotes() {
+        let input = "asdfasdf";
+
+        assert!(!has_open_quotes(input, ','))
+    }
+
+    #[test]
+    fn test_with_opened_quote() {
+        let input = "\"asdfasdf";
+
+        assert!(has_open_quotes(input, ','))
+    }
+
+    #[test]
+    fn test_with_closed_quote() {
+        let input = "\"\"asdfasdf";
+
+        assert!(!has_open_quotes(input, ','))
+    }
+
+    #[test]
+    fn test_two_quotes_middle() {
+        let input = "\"asdf\"\"asdf";
+
+        assert!(has_open_quotes(input, ','))
+    }
+
+    #[test]
+    fn test_two_quotes_end() {
+        let input = "\"asdfasdf\"\"";
+
+        assert!(has_open_quotes(input, ','))
+    }
+
+    #[test]
+    fn test_three_quotes_end() {
+        let input = "\"asdfasdf\"\"\"";
+
+        assert!(!has_open_quotes(input, ','))
+    }
+
+    #[test]
+    fn test_three_quotes_start() {
+        let input = "\"\"\"asdfasdf";
+
+        assert!(has_open_quotes(input, ','))
+    }
+
+    #[test]
+    fn test_only_three_quotes_start() {
+        let input = "\"\"\"";
+
+        assert!(has_open_quotes(input, ','))
+    }
+
+    #[test]
+    fn test_three_quotes_end_of_line() {
+        let input = "X,\"\"\"";
+
+        assert!(has_open_quotes(input, ','))
+    }
+
+    #[test]
+    fn test_just_delimiter_quotes() {
+        let input = "d,e,\",\"";
+
+        assert!(!has_open_quotes(input, ','))
+    }
+}
+
+#[cfg(test)]
 mod parse_rows_tests {
     use super::*;
 
@@ -322,6 +404,76 @@ mod parse_rows_tests {
                 vec![Cell::new("final"), Cell::new("row")],
             ]
         );
+    }
+
+    #[test]
+    fn test_newline_and_quotes() {
+        let input = "A,B,C\nA,X,\"\"\"28-35, GIDC Industrial\nEstate, Nan\"\nY,Z,Q\nX,\"\"\"\nVillege Poicha\"\"\",Q\nX,\"\"\"Villege Poicha\"\"\n\",Q\nN,Y,C".as_bytes();
+        let result = CSVReader::new(input, ',')
+            .into_lines()
+            .collect::<Result<Vec<_>, _>>();
+
+        assert_eq!(
+            result.unwrap(),
+            vec![
+                vec![Cell::new("A"), Cell::new("B"), Cell::new("C")],
+                vec![
+                    Cell::new("A"),
+                    Cell::new("X"),
+                    Cell::new("\"\"\"28-35, GIDC Industrial\nEstate, Nan\"")
+                ],
+                vec![Cell::new("Y"), Cell::new("Z"), Cell::new("Q")],
+                vec![
+                    Cell::new("X"),
+                    Cell::new("\"\"\"\nVillege Poicha\"\"\""),
+                    Cell::new("Q"),
+                ],
+                vec![
+                    Cell::new("X"),
+                    Cell::new("\"\"\"Villege Poicha\"\"\n\""),
+                    Cell::new("Q"),
+                ],
+                vec![Cell::new("N"), Cell::new("Y"), Cell::new("C")],
+            ]
+        )
+    }
+
+    #[test]
+    fn test_quotes_just_delimiter() {
+        let input = "c1,c2,c3\nd,e,\",\"\na,b,c\nd,e,\",\"".as_bytes();
+        let result = CSVReader::new(input, ',')
+            .into_lines()
+            .collect::<Result<Vec<_>, _>>();
+
+        assert_eq!(
+            result.unwrap(),
+            vec![
+                vec![Cell::new("c1"), Cell::new("c2"), Cell::new("c3")],
+                vec![Cell::new("d"), Cell::new("e"), Cell::new("\",\"")],
+                vec![Cell::new("a"), Cell::new("b"), Cell::new("c")],
+                vec![Cell::new("d"), Cell::new("e"), Cell::new("\",\"")],
+            ]
+        )
+    }
+
+    #[test]
+    fn test_false_positive_delimiter_removal() {
+        let input = "a,b,c\n\"lll\",\"\"\"\",\"\"\",\n\"".as_bytes();
+        let result = CSVReader::new(input, ',')
+            .into_lines()
+            .collect::<Result<Vec<_>, _>>();
+
+        assert_eq!(
+            result.unwrap(),
+            vec![
+                vec![Cell::new("a"), Cell::new("b"), Cell::new("c")],
+                vec![
+                    Cell::new("\"lll\""),
+                    Cell::new("\"\"\"\""),
+                    Cell::new("\"\"\",\n\"")
+                ],
+            ]
+        )
     }
 }
 

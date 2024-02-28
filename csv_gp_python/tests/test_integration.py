@@ -42,7 +42,7 @@ def test_different_encoding():
 
 
 def test_unknown_encoding():
-    with pytest.raises(ValueError):
+    with pytest.raises(csv_gp.UnknownEncoding):
         csv_gp.check_file(str(FIXTURES / "kitchen_sink.csv"), ",", encoding="foo")
 
 
@@ -78,7 +78,10 @@ def test_header_messed_up():
 def test_output_file():
     with NamedTemporaryFile() as temp_file:
         result = csv_gp.check_file(
-            str(FIXTURES / "kitchen_sink.csv"), ",", encoding="utf-8", valid_rows_output_path=temp_file.name
+            str(FIXTURES / "kitchen_sink.csv"),
+            ",",
+            encoding="utf-8",
+            valid_rows_output_path=temp_file.name,
         )
 
         assert result
@@ -92,6 +95,46 @@ def test_get_rows():
     assert result == [(0, ["a", "b"]), (1, ["", ""]), (3, [])]
 
 
-def test_unknown_encoding():
+def test_unknown_encoding_ibm852():
     with pytest.raises(csv_gp.UnknownEncoding, match="unknown encoding ibm852"):
         csv_gp.check_file(str(FIXTURES / "kitchen_sink.csv"), ",", encoding="ibm852")
+
+
+def test_quote_and_newline():
+    result = csv_gp.check_file(str(FIXTURES / "quote_and_newline.csv"), ",", encoding="utf-8")
+
+    assert result
+    assert result.column_count == 3
+    assert result.row_count == 6
+    assert result.all_empty_rows == []
+    assert result.blank_rows == []
+    assert result.quoted_delimiter == [1, 2]
+    assert result.quoted_newline == [1, 2, 3, 4]
+    assert result.quoted_quote == [1, 2, 3, 4]
+    assert result.quoted_quote_correctly == [1, 2, 3, 4]
+    assert result.incorrect_cell_quote == []
+    assert result.too_few_columns == []
+    assert result.too_many_columns == []
+    assert result.column_count_per_line == [3] * 6
+    assert result.valid_rows == {0, 1, 2, 3, 4, 5}
+    assert not result.header_messed_up
+
+
+def test_quote_last_cell():
+    result = csv_gp.check_file(str(FIXTURES / "quote_last_cell.csv"), ",", encoding="utf-8")
+
+    assert result
+    assert result.column_count == 3
+    assert result.row_count == 3
+    assert result.all_empty_rows == []
+    assert result.blank_rows == []
+    assert result.quoted_delimiter == [2]
+    assert result.quoted_newline == []
+    assert result.quoted_quote == []
+    assert result.quoted_quote_correctly == []
+    assert result.incorrect_cell_quote == []
+    assert result.too_few_columns == []
+    assert result.too_many_columns == []
+    assert result.column_count_per_line == [3] * 3
+    assert result.valid_rows == {0, 1, 2}
+    assert not result.header_messed_up
