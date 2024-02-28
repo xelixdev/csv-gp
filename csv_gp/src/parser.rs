@@ -36,9 +36,13 @@ fn has_open_quotes(s: &str, delimiter: char) -> bool {
     let mut is_open = false;
     let mut prev_char: Option<char> = None;
 
-    // Remove quoted quotes. Basically any two consecutive quotes can be ignored for the purposes of this
+    // Remove quoted quotes - Basically any two consecutive quotes can be ignored for the purposes of this
     // function.
-    let s2 = str::replace(s, "\"\"", "");
+    // After removing quoted quotes, we can also remove any case of "," if delimiter is ,; as those don't count
+    // as open cell
+    let s2 = s
+        .replace("\"\"", "")
+        .replace(&format!("\"{}\"", delimiter), "");
 
     let mut chars = s2.chars().peekable();
     while let Some(current_char) = chars.next() {
