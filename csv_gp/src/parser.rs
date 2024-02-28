@@ -53,8 +53,8 @@ fn has_open_quotes(s: &str, delimiter: char) -> bool {
             (Some(c), '"', None) if c == delimiter && !is_open => is_open = true,
             // Quote at the end of the string
             (_, '"', None) => is_open = false,
-            // Quote followed by the delimiter (`",`)
-            (_, '"', Some(n)) if n == &delimiter => is_open = false,
+            // Quote followed by the delimiter (`",`), if already open
+            (_, '"', Some(n)) if n == &delimiter && is_open => is_open = false,
             // Quote preceded by the delimiter (`,"`)
             (Some(c), '"', _) if c == delimiter => is_open = true,
             _ => (),
@@ -223,7 +223,14 @@ mod has_open_quotes_tests {
     fn test_just_delimiter_quotes() {
         let input = "d,e,\",\"";
 
-        assert!(!has_open_quotes(input, ','))
+        assert!(!has_open_quotes(input, ','));
+    }
+
+    #[test]
+    fn test_just_delimiter_open() {
+        let input = "a,,\",";
+
+        assert!(has_open_quotes(input, ','));
     }
 }
 
