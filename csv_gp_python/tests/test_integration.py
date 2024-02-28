@@ -138,3 +138,23 @@ def test_quote_last_cell():
     assert result.column_count_per_line == [3] * 3
     assert result.valid_rows == {0, 1, 2}
     assert not result.header_messed_up
+
+
+def test_incorrect_quote():
+    result = csv_gp.check_file(str(FIXTURES / "incorrect_quote.csv"), ",", encoding="utf-8")
+
+    assert result
+    assert result.column_count == 3
+    assert result.row_count == 4
+    assert result.all_empty_rows == []
+    assert result.blank_rows == []
+    assert result.quoted_delimiter == [3]
+    assert result.quoted_newline == []
+    assert result.quoted_quote == []
+    assert result.quoted_quote_correctly == []
+    assert result.incorrect_cell_quote == [1, 2, 3]
+    assert result.too_few_columns == [2, 3]
+    assert result.too_many_columns == []
+    assert result.column_count_per_line == [3, 3, 2, 1]
+    assert result.valid_rows == {0}
+    assert not result.header_messed_up
