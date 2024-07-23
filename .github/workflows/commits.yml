@@ -3,28 +3,5 @@ on:
   pull_request:
 
 jobs:
-  check-commit-message:
-    name: "Check Commits Messages"
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Check fixup and wip"
-        uses: gsactions/commit-message-checker@v2
-        with:
-          pattern: '^((?!(fixup|wip)).)*$'
-          error: "There's fixup or wip commits!"
-          flags: "gmi"
-          checkAllCommitMessages: 'true'
-          accessToken: ${{ secrets.GITHUB_TOKEN }}
-  check-commit-author:
-    name: "Check Last Commit Author and Committer"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      # Only checks the last commit, but it should be enough proxy for validating the entire PR.
-      # The action https://github.com/marketplace/actions/check-commit-author on the other hand doesn't check the
-      # committer. So this should be OK.
-      - uses: dguo/check-author-and-committer-action@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          committer-email-regex: '@xelix\.com$|@users\.noreply\.github\.com$|noreply@github.com$'
-          author-email-regex: '@xelix\.com$|@users\.noreply\.github\.com$'
+  check_commits:
+    uses: xelixdev/.github/.github/workflows/commits.yml@main
