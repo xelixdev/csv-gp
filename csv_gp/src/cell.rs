@@ -15,7 +15,7 @@ impl Cell {
 
         let mut starts = false;
         let mut ends = false;
-        let mut stripped: &str = &self.0.trim();
+        let mut stripped: &str = self.0.trim();
 
         if let Some(s) = stripped.strip_prefix('"') {
             stripped = s;
