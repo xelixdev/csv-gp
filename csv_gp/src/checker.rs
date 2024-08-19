@@ -127,7 +127,12 @@ mod check_file_tests {
 
     #[test]
     fn test_quote_with_unstripped_whitespace_file() {
-        let result = check_file("fixtures/quote_with_whitespace.csv", ',', "utf-8", None::<&std::path::Path>);
+        let result = check_file(
+            "fixtures/quote_with_whitespace.csv",
+            ',',
+            "utf-8",
+            None::<&std::path::Path>,
+        );
         assert_eq!(result.unwrap().incorrect_cell_quote, vec![])
     }
 }
