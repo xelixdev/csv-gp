@@ -90,7 +90,7 @@ mod tests {
     #[test]
     fn test_quotes_strip_whitespace() {
         assert!(Cell::new("\"cameron\" ").correctly_quoted());
-        assert!(Cell::new("\" james\"").correctly_quoted());
+        assert!(Cell::new(" \"james\"").correctly_quoted());
         assert!(Cell::new(" \"matt\" ").correctly_quoted());
     }
 
