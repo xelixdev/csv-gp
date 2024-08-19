@@ -15,7 +15,7 @@ impl Cell {
 
         let mut starts = false;
         let mut ends = false;
-        let mut stripped: &str = &self.0;
+        let mut stripped: &str = &self.0.trim();
 
         if let Some(s) = stripped.strip_prefix('"') {
             stripped = s;
@@ -85,6 +85,13 @@ mod tests {
     #[test]
     fn test_correct_2() {
         assert!(Cell::new("\"5\"\"379'319'026\"\",\"\"SINV-00110094\"").correctly_quoted())
+    }
+
+    #[test]
+    fn test_quotes_strip_whitespace() {
+        assert!(Cell::new("\"cameron\" ").correctly_quoted());
+        assert!(Cell::new("\" james\"").correctly_quoted());
+        assert!(Cell::new(" \"matt\" ").correctly_quoted());
     }
 
     #[test]

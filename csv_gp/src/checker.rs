@@ -122,6 +122,17 @@ fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, delimiter: char, r
 }
 
 #[cfg(test)]
+mod check_file_tests {
+    use super::*;
+
+    #[test]
+    fn test_quote_with_unstripped_whitespace_file() {
+        let result = check_file("fixtures/quote_with_whitespace.csv", ',', "utf-8", None::<&std::path::Path>);
+        assert_eq!(result.unwrap().incorrect_cell_quote, vec![])
+    }
+}
+
+#[cfg(test)]
 mod check_row_tests {
     use std::collections::HashSet;
 
