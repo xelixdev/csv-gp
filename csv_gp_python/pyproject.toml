@@ -19,17 +19,21 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: MIT License",
 ]
+readme = "README.md"
+keywords = ["rust", "csv"]
+description = "CSV GP allows you to pinpoint these common issues with a CSV file, as well as export just the parsable lines from a file."
+
+[project.license]
+file = "LICENSE"
+
+[project.urls]
+"Repository" = "https://github.com/xelixdev/csv-gp"
+
+[tool.maturin]
+include = ["README.md", "LICENSE"]
 
 [tool.poetry]
-name = "csv-gp"
-version = "0.2.0"
-authors = ["Rob Hales <rob.hales@xelix.com>"]
-license = ["MIT"]
-include = ["LICENSE"]
-repository = "https://github.com/xelixdev/csv-gp"
-keywords = ["rust", "csv"]
-readme = "README.md"
-description = ["CSV GP allows you to pinpoint these common issues with a CSV file, as well as export just the parsable lines from a file."]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.8"

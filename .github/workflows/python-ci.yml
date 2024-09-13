@@ -45,6 +45,10 @@ jobs:
       - name: Install Deps
         run: |
           poetry install
+      - name: Prepare build
+        working-directory: .
+        run: |
+          make all
       - name: Install csv_gp
         run: |
           poetry run maturin develop

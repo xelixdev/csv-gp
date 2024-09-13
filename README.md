@@ -32,7 +32,8 @@ The library is available on PyPI, at https://pypi.org/project/csv-gp/ so you can
 1. [Install rust](https://www.rust-lang.org/tools/install)
 2. Install (`pip install maturin`)
 3. Clone the repo
-4. `cd csv_gp_python && maturin develop`
+4. Run `make all`
+5. `cd csv_gp_python && maturin develop`
 
 ## Usage
 
