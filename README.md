@@ -40,3 +40,13 @@ The library is uploaded to the `xelix` codeartifact repository, once you are aut
 2. Merge this change into main
 3. Create a new release on GitHub, creating a tag in the form `vX.Y.Z`
 4. The 'Publish' pipeline should begin running, and the new version will be published
+
+## Running tests
+
+### Running Rust tests
+
+Run `cargo test`.
+
+### Running Python tests
+
+Follow the instructions on compiling from source. Then you can run `pytest`.
