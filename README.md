@@ -34,6 +34,23 @@ The library is uploaded to the `xelix` codeartifact repository, once you are aut
 3. Clone the repo
 4. `cd csv_gp_python && maturin develop`
 
+## Usage
+
+## Rust standalone binary
+
+After installing the binary, the default usage is running `csv-gp $FILE`. This will print a diagnosis of the file. The command provides options to change the delimiter and the encoding of the file. See `csv-gp -h` for details.
+
+Another option provided is `--correct-rows-path` which will export only the correct rows to the provided path.
+
+## Python library
+
+The python library exposes two main functions, `check_file` and `get_rows`.
+
+The check file function takes a path to file, the delimiter and the encoding (see https://github.com/xelixdev/csv-gp/blob/0f77c62841509c134a3bbe06ec178426e9c5aa10/csv_gp_python/csv_gp.pyi) and returns an instance of a class `CSVDetails` which provides details about the file. See the same file to see all the available attributes and their names/types.
+If the `valid_rows_output_path` argument is provided to the function, only the correct rows will be exported to that path.
+
+The get_rows once again takes a path to file, the delimiter and the encoding and additionally a list of row numbers. The function will then return the parsed cells for given rows. See the above file for the exact typing of the parameter and returned values.
+
 ## Releasing a new version of the Python lib
 
 1. Update version numbers in `csv_gp_python/pyproject.toml` and `csv_gp_python/cargo.toml`
