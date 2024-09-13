@@ -30,10 +30,23 @@ jobs:
           command: build
           args: --release -m csv_gp_python/Cargo.toml --sdist --out dist
           manylinux: auto
-      - name: Publish wheel
-        run: |
-          export TWINE_USERNAME=aws
-          export TWINE_PASSWORD=`aws codeartifact get-authorization-token --domain xelix --domain-owner 286666724669 --region eu-west-2 --query authorizationToken --output text`
-          export TWINE_REPOSITORY_URL=`aws codeartifact get-repository-endpoint --domain xelix --domain-owner 286666724669 --repository xelix --region eu-west-2 --format pypi --query repositoryEndpoint --output text`
-          pip install --upgrade twine
-          twine upload --skip-existing dist/*
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./dist/*
+  upload_pypi:
+    name: Upload to PyPI
+    needs: [wheels]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
