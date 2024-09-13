@@ -28,7 +28,7 @@ def test_kitchen_sink():
 
 
 def test_invalid_delimiter():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="expected a string of length 1"):
         csv_gp.check_file(str(FIXTURES / "kitchen_sink.csv"), ",+", encoding="utf-8")
 
 
@@ -56,7 +56,7 @@ def test_wrong_encoding():
 
 
 def test_file_non_existent():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="No such file or directory"):
         csv_gp.check_file("shadow_realm.csv", ",", encoding="utf-8")
 
 
