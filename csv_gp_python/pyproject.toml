@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
 ]
 
 [tool.poetry]
@@ -24,6 +25,7 @@ name = "csv-gp"
 version = "0.1.12"
 description = ""
 authors = ["Rob Hales <rob.hales@xelix.com>"]
+license = ["MIT"]
 
 [tool.poetry.dependencies]
 python = ">=3.8"
