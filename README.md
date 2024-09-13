@@ -23,9 +23,9 @@ Add the following to your `Cargo.toml`:
 
 ### From package manager
 
-The library is uploaded to the `xelix` codeartifact repository, once you are authenticated to use that you can install with:
+The library is available on PyPI, at https://pypi.org/project/csv-gp/ so you can just run:
 
-`pip install --index-url <codeartifact url> csv-gp`
+`pip install csv-gp`
 
 ### Compiling from source
 

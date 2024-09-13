@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "csv-gp"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -22,10 +22,14 @@ classifiers = [
 
 [tool.poetry]
 name = "csv-gp"
-version = "0.1.12"
-description = ""
+version = "0.2.0"
 authors = ["Rob Hales <rob.hales@xelix.com>"]
 license = ["MIT"]
+include = ["LICENSE"]
+repository = "https://github.com/xelixdev/csv-gp"
+keywords = ["rust", "csv"]
+readme = "README.md"
+description = ["CSV GP allows you to pinpoint these common issues with a CSV file, as well as export just the parsable lines from a file."]
 
 [tool.poetry.dependencies]
 python = ">=3.8"
