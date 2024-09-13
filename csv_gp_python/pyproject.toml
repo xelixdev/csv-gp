@@ -4,32 +4,108 @@ build-backend = "maturin"
 
 [project]
 name = "csv-gp"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
 ]
+readme = "README.md"
+keywords = ["rust", "csv"]
+description = "CSV GP allows you to pinpoint these common issues with a CSV file, as well as export just the parsable lines from a file."
+
+[project.license]
+file = "LICENSE"
+
+[project.urls]
+"Repository" = "https://github.com/xelixdev/csv-gp"
+
+[tool.maturin]
+include = ["README.md", "LICENSE"]
 
 [tool.poetry]
-name = "csv-gp"
-version = "0.1.12"
-description = ""
-authors = ["Rob Hales <rob.hales@xelix.com>"]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.8"
 
 [tool.poetry.group.dev.dependencies]
-black = "^24.2.0"
 pytest = "^8.0.0"
-isort = "^5.13.2"
 maturin = "^0.14.8"
+ruff = "^0.6.4"
 
-
-[tool.black]
+[tool.ruff]
 line-length = 120
+target-version = "py38"
 
-[tool.isort]
-profile = "black"
-line_length = 120
+[tool.ruff.lint]
+select = [
+    # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "F",
+    # https://docs.astral.sh/ruff/rules/#pycodestyle-e-w
+    "E",
+    "W",
+    # https://docs.astral.sh/ruff/rules/#isort-i
+    "I",
+    # https://docs.astral.sh/ruff/rules/#pep8-naming-n
+    "N",
+    # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "UP",
+    # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    "B",
+    # https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
+    "C4",
+    # https://docs.astral.sh/ruff/rules/#flake8-debugger-t10
+    "T10",
+    # https://docs.astral.sh/ruff/rules/#flake8-pie-pie
+    "PIE",
+    # https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
+    "PT",
+    # https://docs.astral.sh/ruff/rules/#flake8-return-ret
+    "RET",
+    # https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
+    "SIM",
+    # https://docs.astral.sh/ruff/rules/#pydocstyle-d
+    "D201", "D202", "D204", "D206", "D207", "D208", "D209", "D211", "D213", "D300", "D403",
+    # https://docs.astral.sh/ruff/rules/#flake8-implicit-str-concat-isc
+    "ISC",
+    # https://docs.astral.sh/ruff/rules/#flake8-import-conventions-icn
+    "ICN",
+    # https://docs.astral.sh/ruff/rules/#flake8-tidy-imports-tid
+    "TID252",
+    # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+    "RUF010", "RUF200",
+]
+
+# Never enforce...
+ignore = [
+    "E501",   # line length violations
+    "PT004",  # missing-fixture-name-underscore
+    "SIM108", # use-ternary-operator
+    "E501",   # line length violations
+    "PT004",  # missing-fixture-name-underscore
+    "SIM108", # use-ternary-operator
+    "RET505", # superfluous-else-return
+    "RET506", # superfluous-else-raise
+    "RET507", # superfluous-else-continue
+    "RET508", # superfluous-else-break
+    "ISC001", # The following rules may cause conflicts when used with the formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Never inforce F401 (unused-import) in __init__ files
+"__init__.py" = ["F401"]
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+parametrize-names-type = "list"
