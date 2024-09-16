@@ -99,7 +99,7 @@ dependencies = [
 
 [[package]]
 name = "csv-gp"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "clap",
  "csv",
@@ -111,7 +111,7 @@ dependencies = [
 
 [[package]]
 name = "csv-gp-python"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "csv-gp",
  "pyo3",
