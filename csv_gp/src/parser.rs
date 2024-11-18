@@ -1,23 +1,23 @@
 use crate::{cell::Cell, error::CSVError, file::read_encoded_file};
 use std::{io, path::Path};
 
-struct CSVReader<R> {
+pub struct CSVReader<R> {
     reader: R,
     delimiter: char,
 }
 
 impl<R: io::BufRead> CSVReader<R> {
-    fn new(reader: R, delimiter: char) -> Self {
+    pub fn new(reader: R, delimiter: char) -> Self {
         Self { reader, delimiter }
     }
 
     /// Returns a owned iterator of all the csv lines
-    fn into_lines(self) -> CSVLineIntoIter<R> {
+    pub fn into_lines(self) -> CSVLineIntoIter<R> {
         CSVLineIntoIter::new(self)
     }
 }
 
-struct CSVLineIntoIter<B> {
+pub struct CSVLineIntoIter<B> {
     lines: io::Lines<B>,
     delimiter: char,
 }
