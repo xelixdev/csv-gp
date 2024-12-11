@@ -20,8 +20,9 @@
         cargo
         rustfmt
         rustPackages.clippy
+        rust-analyzer
       ];
-
+      RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
       shellHook = ''
         export POETRY_VIRTUALENVS_IN_PROJECT=true
         source .venv/bin/activate
