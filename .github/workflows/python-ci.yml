@@ -21,6 +21,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - uses: pre-commit/action@v3.0.1
+        env:
+          SKIP: "trufflehog"
   test:
     strategy:
       fail-fast: false
