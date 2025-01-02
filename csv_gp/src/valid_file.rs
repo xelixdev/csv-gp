@@ -21,9 +21,9 @@ pub(crate) fn save_valid_file(
         .from_path(output_path)
         .map_err(Into::<io::Error>::into)?;
 
-    for (i, row_result) in parse_file(path, delimiter, encoding)?.enumerate() {
+    for (i, row) in parse_file(path, delimiter, encoding)?.enumerate() {
         if csv_details.valid_rows.contains(&i) {
-            let row = row_result?;
+            // let row = row_result?;
             writer.write_record(row).map_err(Into::<io::Error>::into)?;
         }
     }

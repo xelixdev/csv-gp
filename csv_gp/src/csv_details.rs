@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct CSVDetails {
     /// Number of non-blank rows (including the header) in the file
     pub row_count: usize,

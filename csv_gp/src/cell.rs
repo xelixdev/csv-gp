@@ -1,65 +1,92 @@
-use std::fmt::Display;
+use crate::scanner::Token;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Cell(String);
+/// Short-hand macro for creating cells
+#[macro_export]
+macro_rules! cell {
+    () => (Cell::new(Vec::new()));
+    ($($x:expr),+ $(,)?) => (Cell::new(vec![$($x),*]));
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Cell {
+    tokens: Vec<Token>,
+    correctly_quoted: bool,
+    contains_double_quote: bool,
+}
 
 impl Cell {
-    pub fn new(v: impl Into<String>) -> Self {
-        Self(v.into())
+    pub fn new(v: Vec<Token>) -> Self {
+        let (correctly_quoted, contains_double_quote) = Cell::determine_quotes(&v);
+        Self {
+            tokens: v,
+            correctly_quoted,
+            contains_double_quote,
+        }
+    }
+
+    /// Returns if the cell has correct quoting, and if a double quote was found in the cell
+    fn determine_quotes(tokens: &[Token]) -> (bool, bool) {
+        // This looks an awful lot like parsing, maybe move there?
+
+        let mut opening_quote = false;
+        let mut closing_quote = false;
+
+        let mut stripped = tokens;
+        if let Some(s) = stripped.strip_prefix(&[Token::Quote]) {
+            stripped = s;
+            opening_quote = true;
+        }
+        if let Some(s) = stripped.strip_suffix(&[Token::Quote]) {
+            stripped = s;
+            closing_quote = true;
+        }
+
+        let mut tokens = stripped.into_iter().peekable();
+        let mut single_quote_found = false;
+        let mut double_quote_found = false;
+        loop {
+            match tokens.next() {
+                Some(t) if t == &Token::Quote => {
+                    let has_paired_quote = tokens.next_if(|t| t == &&Token::Quote).is_some();
+                    if !has_paired_quote {
+                        single_quote_found = true;
+                    } else {
+                        double_quote_found = true;
+                    }
+                }
+                Some(_) => (),
+                None => break,
+            }
+        }
+
+        let unmatched_surronding_quotes = opening_quote != closing_quote;
+        let surrounding_quotes = opening_quote && closing_quote;
+        let correctly_quoted = !unmatched_surronding_quotes
+            && ((surrounding_quotes && !single_quote_found)
+                || (!surrounding_quotes && !double_quote_found));
+
+        (correctly_quoted, double_quote_found)
     }
 
     pub fn correctly_quoted(&self) -> bool {
-        if !self.0.contains('"') {
-            return true;
-        }
+        self.correctly_quoted
+    }
 
-        let mut starts = false;
-        let mut ends = false;
-        let mut stripped: &str = &self.0;
-
-        if let Some(s) = stripped.strip_prefix('"') {
-            stripped = s;
-            starts = true;
-        }
-
-        if let Some(s) = stripped.strip_suffix('"') {
-            stripped = s;
-            ends = true;
-        }
-
-        if !starts || !ends {
-            return false;
-        }
-
-        if !stripped.contains('"') {
-            return true;
-        }
-
-        stripped.matches("\"\"").count() * 2 == stripped.matches('\"').count()
+    pub fn contains_double_quote(&self) -> bool {
+        self.contains_double_quote
     }
 
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty() || self.0 == "\"\""
+        self.tokens.is_empty() || self == &cell!(Token::Quote, Token::Quote)
     }
 
-    pub fn contains(&self, pat: &str) -> bool {
-        self.0.contains(pat)
+    pub fn contains(&self, t: &Token) -> bool {
+        self.tokens.contains(t)
     }
 
     pub fn invalid_character_count(&self) -> usize {
-        self.0.matches('\u{FFFD}').count()
-    }
-}
-
-impl AsRef<[u8]> for Cell {
-    fn as_ref(&self) -> &[u8] {
-        self.0.as_ref()
-    }
-}
-
-impl Display for Cell {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        0
+        // self.0.matches('\u{FFFD}').count()
     }
 }
 
@@ -67,43 +94,69 @@ impl Display for Cell {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_incorrect() {
-        assert!(!Cell::new("\"Anlagestiftung der UBS für \"Immobilien Schweiz\", Zürich, c/o UBS Fund Management AG\"").correctly_quoted())
-    }
+    mod correctly_quoted {
+        use super::*;
+        use Token::*;
 
-    #[test]
-    fn test_incorrect_2() {
-        assert!(!Cell::new("\"5\"379'319'026\",\"SINV-00110094\"").correctly_quoted())
-    }
+        #[test]
+        fn incorrect() {
+            assert!(!cell!(
+                Quote, Data, Quote, Data, Quote, Delimiter, Data, Delimiter, Data, Quote
+            )
+            .correctly_quoted())
+            // assert!(!Cell::new("\"Anlagestiftung der UBS für \"Immobilien Schweiz\", Zürich, c/o UBS Fund Management AG\"").correctly_quoted())
+        }
 
-    #[test]
-    fn test_correct() {
-        assert!(Cell::new("\"Anlagestiftung der UBS für \"\"Immobilien Schweiz\"\", Zürich, c/o UBS Fund Management AG\"").correctly_quoted())
-    }
+        #[test]
+        fn incorrect_2() {
+            assert!(
+                !cell!(Quote, Data, Quote, Data, Quote, Delimiter, Quote, Data, Quote)
+                    .correctly_quoted()
+            )
+            // assert!(!Cell::new("\"5\"379'319'026\",\"SINV-00110094\"").correctly_quoted())
+        }
 
-    #[test]
-    fn test_correct_2() {
-        assert!(Cell::new("\"5\"\"379'319'026\"\",\"\"SINV-00110094\"").correctly_quoted())
-    }
+        #[test]
+        fn correct() {
+            assert!(cell!(
+                Quote, Data, Quote, Quote, Data, Quote, Quote, Delimiter, Data, Delimiter, Data,
+                Quote
+            )
+            .correctly_quoted())
+        }
 
-    #[test]
-    fn test_no_quotes() {
-        assert!(Cell::new("test").correctly_quoted())
-    }
+        #[test]
+        fn correct_2() {
+            assert!(cell!(
+                Quote, Data, Quote, Quote, Data, Quote, Quote, Delimiter, Quote, Quote, Data, Quote
+            )
+            .correctly_quoted())
+            // assert!(Cell::new("\"5\"\"379'319'026\"\",\"\"SINV-00110094\"").correctly_quoted())
+        }
 
-    #[test]
-    fn test_no_quotes_when_stripped() {
-        assert!(Cell::new("\"test\"").correctly_quoted())
-    }
+        #[test]
+        fn all_quotes() {
+            assert!(cell!(Quote, Quote, Quote, Quote).correctly_quoted())
+        }
 
-    #[test]
-    fn test_does_not_start() {
-        assert!(!Cell::new("test\"").correctly_quoted())
-    }
+        #[test]
+        fn no_quotes() {
+            assert!(cell!(Data).correctly_quoted())
+        }
 
-    #[test]
-    fn test_does_not_end() {
-        assert!(!Cell::new("\"test").correctly_quoted())
+        #[test]
+        fn quoted_cell() {
+            assert!(cell!(Quote, Data, Quote).correctly_quoted())
+        }
+
+        #[test]
+        fn no_opening() {
+            assert!(!cell!(Data, Quote).correctly_quoted())
+        }
+
+        #[test]
+        fn no_closing() {
+            assert!(!cell!(Quote, Data).correctly_quoted())
+        }
     }
 }

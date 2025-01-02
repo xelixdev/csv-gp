@@ -4,4 +4,5 @@ pub mod csv_details;
 pub mod error;
 pub(crate) mod file;
 pub mod parser;
+pub mod scanner;
 pub(crate) mod valid_file;
