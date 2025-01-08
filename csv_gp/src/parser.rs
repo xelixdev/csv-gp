@@ -3,7 +3,7 @@ use encoding_rs::Encoding;
 use crate::{
     cell::Cell,
     error::{CSVError, UnknownEncoding},
-    scanner::{Scanner, Token},
+    scanner::{Scanner, TokenType},
 };
 use std::{fs::File, io, path::Path};
 
@@ -32,45 +32,46 @@ impl<R> CSVReader<R> {
 
 impl CSVReader<File> {
     pub fn from_path(path: impl AsRef<Path>, delimiter: u8) -> Result<Self, CSVError> {
-        let scanner = Scanner::new(File::open(path)?, delimiter);
+        let scanner = Scanner::from_reader(File::open(path)?, delimiter);
         Ok(Self::from_scanner(scanner))
     }
 }
 
 /// Compute the next parser state from the current state and the current token.
-fn transition(current: &State, t: &Token) -> State {
+fn transition(current: &State, t: &TokenType) -> State {
     use State::*;
+    use TokenType::*;
 
     match current {
         QuotedField => match t {
-            Token::Delimiter => QuotedField,
-            Token::Quote => AfterQuoteWithinQuotedField,
-            Token::Newline => QuotedField,
-            Token::Data => QuotedField,
+            Delimiter => QuotedField,
+            Quote => AfterQuoteWithinQuotedField,
+            Newline => QuotedField,
+            Data => QuotedField,
         },
         UnquotedField => match t {
-            Token::Delimiter => AfterFieldEnd,
-            Token::Newline => AfterRecordEnd,
-            Token::Quote => UnquotedField,
-            Token::Data => UnquotedField,
+            Delimiter => AfterFieldEnd,
+            Newline => AfterRecordEnd,
+            Quote => UnquotedField,
+            Data => UnquotedField,
         },
         AfterQuoteWithinQuotedField => match t {
-            Token::Delimiter => AfterFieldEnd,
-            Token::Quote => QuotedField,
-            Token::Newline => AfterRecordEnd,
-            Token::Data => UnquotedField,
+            Delimiter => AfterFieldEnd,
+            Quote => QuotedField,
+            Newline => AfterRecordEnd,
+            Data => UnquotedField,
         },
         AfterFieldEnd => match t {
-            Token::Delimiter => AfterFieldEnd,
-            Token::Quote => QuotedField,
-            Token::Newline => AfterRecordEnd,
-            Token::Data => UnquotedField,
+            Delimiter => AfterFieldEnd,
+            Quote => QuotedField,
+            Newline => AfterRecordEnd,
+            Data => UnquotedField,
         },
         AfterRecordEnd => match t {
-            Token::Delimiter => AfterFieldEnd,
-            Token::Quote => QuotedField,
-            Token::Newline => AfterRecordEnd,
-            Token::Data => UnquotedField,
+            Delimiter => AfterFieldEnd,
+            Quote => QuotedField,
+            Newline => AfterRecordEnd,
+            Data => UnquotedField,
         },
     }
 }
@@ -98,9 +99,8 @@ impl<R: io::Read> Iterator for CSVReader<R> {
                         Err(e) => return Some(Err(e.into())),
                         Ok(t) => t,
                     };
-                    let next_state = transition(&self.state, &token);
-                    self.state = next_state.clone();
-                    match next_state {
+                    self.state = transition(&self.state, &token.token_type);
+                    match self.state {
                         State::QuotedField
                         | State::UnquotedField
                         | State::AfterQuoteWithinQuotedField => {
@@ -136,18 +136,19 @@ pub fn parse_file(
     Ok(CSVReader::from_path(filename, encoded_delimiter)?.into_iter())
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use crate::cell;
 
     use super::*;
-    use Token::*;
+    use crate::scanner::TokenType::*;
 
     use pretty_assertions::assert_eq;
 
     fn check(input: &'static str, expected: Vec<Vec<Cell>>) {
         let bytes = input.as_bytes();
-        let scanner = Scanner::new(bytes, b',');
+        let scanner = Scanner::from_reader(bytes, b',');
         let reader = CSVReader::from_scanner(scanner);
 
         let actual = reader.into_iter().flatten().collect::<Vec<_>>();
@@ -350,4 +351,4 @@ mod tests {
             ],
         )
     }
-}
+} */

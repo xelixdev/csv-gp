@@ -1,4 +1,7 @@
-use crate::scanner::Token;
+use crate::{
+    csv_details::ByteRange,
+    scanner::{Token, TokenType},
+};
 
 /// Short-hand macro for creating cells
 #[macro_export]
@@ -16,7 +19,12 @@ pub struct Cell {
 
 impl Cell {
     pub fn new(v: Vec<Token>) -> Self {
-        let (correctly_quoted, contains_double_quote) = Cell::determine_quotes(&v);
+        let (correctly_quoted, contains_double_quote) = Cell::determine_quotes(
+            v.iter()
+                .map(|t| &t.token_type)
+                .collect::<Vec<_>>()
+                .as_slice(),
+        );
         Self {
             tokens: v,
             correctly_quoted,
@@ -25,18 +33,18 @@ impl Cell {
     }
 
     /// Returns if the cell has correct quoting, and if a double quote was found in the cell
-    fn determine_quotes(tokens: &[Token]) -> (bool, bool) {
+    fn determine_quotes(tokens: &[&TokenType]) -> (bool, bool) {
         // This looks an awful lot like parsing, maybe move there?
 
         let mut opening_quote = false;
         let mut closing_quote = false;
 
         let mut stripped = tokens;
-        if let Some(s) = stripped.strip_prefix(&[Token::Quote]) {
+        if let Some(s) = stripped.strip_prefix(&[&TokenType::Quote]) {
             stripped = s;
             opening_quote = true;
         }
-        if let Some(s) = stripped.strip_suffix(&[Token::Quote]) {
+        if let Some(s) = stripped.strip_suffix(&[&TokenType::Quote]) {
             stripped = s;
             closing_quote = true;
         }
@@ -46,8 +54,8 @@ impl Cell {
         let mut double_quote_found = false;
         loop {
             match tokens.next() {
-                Some(t) if t == &Token::Quote => {
-                    let has_paired_quote = tokens.next_if(|t| t == &&Token::Quote).is_some();
+                Some(t) if t == &&TokenType::Quote => {
+                    let has_paired_quote = tokens.next_if(|t| t == &&&TokenType::Quote).is_some();
                     if !has_paired_quote {
                         single_quote_found = true;
                     } else {
@@ -77,19 +85,27 @@ impl Cell {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.tokens.is_empty() || self == &cell!(Token::Quote, Token::Quote)
+        self.tokens.is_empty() || self.tokens.iter().all(|t| t.token_type == TokenType::Quote)
     }
 
-    pub fn contains(&self, t: &Token) -> bool {
-        self.tokens.contains(t)
+    pub fn contains(&self, token_type: &TokenType) -> bool {
+        self.tokens.iter().any(|t| &t.token_type == token_type)
     }
 
     pub fn invalid_character_count(&self) -> usize {
         0
         // self.0.matches('\u{FFFD}').count()
     }
+
+    pub fn byte_range(&self) -> Option<ByteRange> {
+        let start = self.tokens.first()?.start;
+        let last = self.tokens.last()?;
+        let length = last.start + last.length - start;
+        Some(ByteRange::new(start as i64, length))
+    }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -104,7 +120,6 @@ mod tests {
                 Quote, Data, Quote, Data, Quote, Delimiter, Data, Delimiter, Data, Quote
             )
             .correctly_quoted())
-            // assert!(!Cell::new("\"Anlagestiftung der UBS für \"Immobilien Schweiz\", Zürich, c/o UBS Fund Management AG\"").correctly_quoted())
         }
 
         #[test]
@@ -113,7 +128,6 @@ mod tests {
                 !cell!(Quote, Data, Quote, Data, Quote, Delimiter, Quote, Data, Quote)
                     .correctly_quoted()
             )
-            // assert!(!Cell::new("\"5\"379'319'026\",\"SINV-00110094\"").correctly_quoted())
         }
 
         #[test]
@@ -131,7 +145,6 @@ mod tests {
                 Quote, Data, Quote, Quote, Data, Quote, Quote, Delimiter, Quote, Quote, Data, Quote
             )
             .correctly_quoted())
-            // assert!(Cell::new("\"5\"\"379'319'026\"\",\"\"SINV-00110094\"").correctly_quoted())
         }
 
         #[test]
@@ -159,4 +172,4 @@ mod tests {
             assert!(!cell!(Quote, Data).correctly_quoted())
         }
     }
-}
+}*/

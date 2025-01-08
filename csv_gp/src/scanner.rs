@@ -5,78 +5,71 @@ use std::{
 
 pub struct Scanner<R> {
     source: BufReader<R>,
+    byte_pos: u64,
     remainder: VecDeque<Token>,
     state: State,
     delimiter: u8,
 }
 
-impl<R: io::Read> Scanner<R> {
-    pub fn new(source: R, delimiter: u8) -> Self {
+impl<R> Scanner<R> {
+    fn new(source: BufReader<R>, delimiter: u8) -> Self {
         Self {
-            source: io::BufReader::new(source),
+            source,
             delimiter,
             state: State::Start,
             remainder: VecDeque::new(),
+            byte_pos: 0,
         }
+    }
+}
+
+impl<R: io::Read> Scanner<R> {
+    pub fn from_reader(source: R, delimiter: u8) -> Self {
+        Self::new(io::BufReader::new(source), delimiter)
     }
 }
 
 enum State {
     Start,
-    DataStart,
-    InData,
-    InDelimiter,
-    InQuote,
-    NewlineStart,
-    InNewline,
+    NonQuoted,
+    Quoted,
+    StartDoubleQuote,
+    EndQuotedQuote,
 }
 
-fn transition(state: &State, c: u8, delimiter: u8) -> State {
+fn transition(state: &State, t: &TokenType) -> State {
     use State::*;
 
     match state {
-        Start => match c {
-            c if c == delimiter => InDelimiter,
-            b'"' => InQuote,
-            b'\r' | b'\n' => NewlineStart,
-            _ => DataStart,
+        Start => match t {
+            TokenType::Quote => Quoted,
+            _ => NonQuoted,
         },
-        DataStart => match c {
-            c if c == delimiter => InDelimiter,
-            b'"' => InQuote,
-            b'\r' | b'\n' => NewlineStart,
-            _ => InData,
+        NonQuoted => match t {
+            TokenType::Quote => Quoted,
+            _ => NonQuoted,
         },
-        InData => match c {
-            c if c == delimiter => InDelimiter,
-            b'"' => InQuote,
-            b'\r' | b'\n' => NewlineStart,
-            _ => InData,
+        Quoted => match t {
+            TokenType::Quote => StartDoubleQuote,
+            _ => NonQuoted,
         },
-        InDelimiter => match c {
-            c if c == delimiter => InDelimiter,
-            b'"' => InQuote,
-            b'\r' | b'\n' => NewlineStart,
-            _ => DataStart,
+        StartDoubleQuote => match t {
+            TokenType::Quote => EndQuotedQuote,
+            _ => NonQuoted,
         },
-        InQuote => match c {
-            c if c == delimiter => InDelimiter,
-            b'"' => InQuote,
-            b'\r' | b'\n' => NewlineStart,
-            _ => DataStart,
+        EndQuotedQuote => match t {
+            TokenType::Quote => Quoted,
+            _ => NonQuoted,
         },
-        NewlineStart => match c {
-            c if c == delimiter => InDelimiter,
-            b'"' => InQuote,
-            b'\r' | b'\n' => InNewline,
-            _ => DataStart,
-        },
-        InNewline => match c {
-            c if c == delimiter => InDelimiter,
-            b'"' => InQuote,
-            b'\r' | b'\n' => InNewline,
-            _ => DataStart,
-        },
+    }
+}
+
+fn match_token(c: &u8, delimiter: u8) -> TokenType {
+    match c {
+        c if c == &delimiter => TokenType::Delimiter,
+        b'\n' | b'\r' => TokenType::Newline,
+        b'"' => TokenType::Quote,
+        _ => TokenType::Data,
     }
 }
 
@@ -99,18 +92,44 @@ impl<R: io::Read> Iterator for Scanner<R> {
             }
 
             let mut tokens = VecDeque::with_capacity(len);
-            for c in input {
-                let next_state = transition(&self.state, *c, self.delimiter);
-                match next_state {
-                    State::Start => unreachable!(), // Start is the bootstraping state, should never be transitioned to
-                    State::DataStart => tokens.push_back(Token::Data),
-                    State::InData => (),
-                    State::InDelimiter => tokens.push_back(Token::Delimiter),
-                    State::InQuote => tokens.push_back(Token::Quote),
-                    State::NewlineStart => tokens.push_back(Token::Newline),
-                    State::InNewline => (),
+            let mut iter = input
+                .iter()
+                .map(|c| match_token(c, self.delimiter))
+                .peekable();
+            loop {
+                match iter.next() {
+                    None => break,
+                    Some(t) => {
+                        self.state = transition(&self.state, &t);
+                        match t {
+                            TokenType::Delimiter => {
+                                tokens.push_back(Token::delimiter(self.byte_pos));
+                            }
+                            TokenType::Quote => {
+                                tokens.push_back(Token::quote(self.byte_pos));
+                            }
+                            TokenType::Newline => {
+                                let start = self.byte_pos;
+                                // Consume all the newline characters
+                                while iter.peek().is_some_and(|t| t == &TokenType::Newline) {
+                                    iter.next();
+                                    self.byte_pos += 1;
+                                }
+                                tokens.push_back(Token::newline(start, self.byte_pos - start + 1));
+                            }
+                            // FIXME: if a data token continues after the end of the buffer it will produce two tokens
+                            TokenType::Data => {
+                                let start = self.byte_pos;
+                                while iter.peek().is_some_and(|t| t == &TokenType::Data) {
+                                    iter.next();
+                                    self.byte_pos += 1;
+                                }
+                                tokens.push_back(Token::data(start, self.byte_pos - start + 1));
+                            }
+                        }
+                    }
                 }
-                self.state = next_state;
+                self.byte_pos += 1;
             }
             self.source.consume(len);
             let token = tokens
@@ -123,20 +142,71 @@ impl<R: io::Read> Iterator for Scanner<R> {
 }
 
 #[derive(PartialEq, PartialOrd, Eq, Ord, Debug)]
-pub enum Token {
+pub enum TokenType {
     Delimiter,
     Quote,
     Newline,
     Data,
 }
 
+#[derive(PartialEq, PartialOrd, Eq, Ord, Debug)]
+pub struct Token {
+    pub token_type: TokenType,
+    /// The byte position the token starts at
+    pub start: u64,
+    /// The length in bytes of the token
+    pub length: u64,
+}
+
+impl Token {
+    fn new(token_type: TokenType, start: u64, length: u64) -> Self {
+        Self {
+            token_type,
+            start,
+            length,
+        }
+    }
+
+    fn data(start: u64, length: u64) -> Self {
+        Self {
+            token_type: TokenType::Data,
+            start,
+            length,
+        }
+    }
+
+    fn newline(start: u64, length: u64) -> Self {
+        Self {
+            token_type: TokenType::Newline,
+            start,
+            length,
+        }
+    }
+
+    fn delimiter(start: u64) -> Self {
+        Self {
+            token_type: TokenType::Delimiter,
+            start,
+            length: 1,
+        }
+    }
+
+    fn quote(start: u64) -> Self {
+        Self {
+            token_type: TokenType::Quote,
+            start,
+            length: 1,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use Token::*;
+    use pretty_assertions::assert_eq;
 
     fn check(input: &str, expected: Vec<Token>) {
-        let s = Scanner::new(input.as_bytes(), b',');
+        let s = Scanner::from_reader(input.as_bytes(), b',');
         let actual = s.into_iter().flatten().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
@@ -146,8 +216,32 @@ mod tests {
         check(
             "some,line\n\"with\",quotes",
             vec![
-                Data, Delimiter, Data, Newline, Quote, Data, Quote, Delimiter, Data,
+                Token::data(0, 4),
+                Token::delimiter(4),
+                Token::data(5, 4),
+                Token::newline(9, 1),
+                Token::quote(10),
+                Token::data(11, 4),
+                Token::quote(15),
+                Token::delimiter(16),
+                Token::data(17, 6),
             ],
+        );
+    }
+
+    #[test]
+    fn handles_buffer_boundry() {
+        let input = "some,line that extends over buffer,boundry";
+        let s = Scanner::new(BufReader::with_capacity(10, input.as_bytes()), b',');
+        assert_eq!(
+            s.into_iter().flatten().collect::<Vec<_>>(),
+            vec![
+                Token::data(0, 4),
+                Token::delimiter(4),
+                Token::data(5, 29),
+                Token::delimiter(34),
+                Token::data(35, 7),
+            ]
         );
     }
 }

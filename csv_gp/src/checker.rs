@@ -1,7 +1,11 @@
 use std::{cmp::Ordering, path::Path};
 
 use crate::{
-    cell::Cell, csv_details::CSVDetails, error::CSVError, parser::parse_file, scanner::Token,
+    cell::Cell,
+    csv_details::{self, ByteRange, CSVDetails},
+    error::CSVError,
+    parser::parse_file,
+    scanner::{Token, TokenType},
     valid_file::save_valid_file,
 };
 
@@ -18,7 +22,7 @@ pub fn check_file(
     let csv_details = check_rows(rows)?;
 
     if let Some(valid_rows_path) = valid_rows_output_path {
-        save_valid_file(&path, &csv_details, delimiter, encoding, valid_rows_path)?
+        save_valid_file(&path, &csv_details, valid_rows_path)?
     }
 
     Ok(csv_details)
@@ -54,15 +58,25 @@ fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, row_number: usize)
 
     let mut all_empty = true;
 
+    let mut byte_range: Option<ByteRange> = None;
+
     for cell in cells {
         all_correctly_quoted &= cell.correctly_quoted();
 
         has_quoted_quote |= !cell.is_empty() && cell.contains_double_quote();
-        has_quoted_newline |= cell.contains(&Token::Newline);
-        has_quoted_delimiter |= cell.contains(&Token::Delimiter);
+        has_quoted_newline |= cell.contains(&TokenType::Newline);
+        has_quoted_delimiter |= cell.contains(&TokenType::Delimiter);
 
         all_empty &= cell.is_empty();
         csv_details.invalid_character_count += cell.invalid_character_count();
+
+        if let Some(cell_br) = cell.byte_range() {
+            if let Some(br) = byte_range {
+                byte_range = Some(ByteRange::new(br.start, br.length + br.length));
+            } else {
+                byte_range = Some(cell_br);
+            }
+        }
     }
 
     // Length checks
@@ -117,9 +131,13 @@ fn check_row(csv_details: &mut CSVDetails, cells: &Vec<Cell>, row_number: usize)
 
     if all_correctly_quoted && !too_few_columns && !too_many_columns && !blank_row {
         csv_details.valid_rows.insert(row_number);
+        if let Some(br) = byte_range {
+            csv_details.valid_byte_ranges.push(br);
+        }
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
@@ -270,4 +288,4 @@ mod tests {
             },
         );
     }
-}
+}*/

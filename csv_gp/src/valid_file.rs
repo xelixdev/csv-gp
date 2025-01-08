@@ -1,13 +1,15 @@
-use crate::{csv_details::CSVDetails, error::CSVError, parser::parse_file};
+use crate::{csv_details::CSVDetails, error::CSVError};
 
-use std::{fs, io, path::Path};
+use std::{
+    fs::{self, File},
+    io::{self, BufReader, BufWriter, Read, Write},
+    path::Path,
+};
 
 /// Saves a file containing only the valid rows according to the passed CSVDetails
 pub(crate) fn save_valid_file(
     path: impl AsRef<Path>,
     csv_details: &CSVDetails,
-    delimiter: char,
-    encoding: &str,
     output_path: impl AsRef<Path>,
 ) -> Result<(), CSVError> {
     // Create intermediate directories
@@ -15,17 +17,15 @@ pub(crate) fn save_valid_file(
         fs::create_dir_all(parent)?;
     }
 
-    let mut writer = csv::WriterBuilder::new()
-        .delimiter(delimiter as u8)
-        .quote_style(csv::QuoteStyle::Never) // quoting was untouched during parsing so set to avoid double quoting
-        .from_path(output_path)
-        .map_err(Into::<io::Error>::into)?;
+    let mut reader = BufReader::new(File::open(path)?);
+    let mut writer = BufWriter::new(File::create(output_path)?);
 
-    for (i, row) in parse_file(path, delimiter, encoding)?.enumerate() {
-        if csv_details.valid_rows.contains(&i) {
-            // let row = row_result?;
-            writer.write_record(row).map_err(Into::<io::Error>::into)?;
-        }
+    let mut pos = 0u64;
+    for valid_range in &csv_details.valid_byte_ranges {
+        reader.seek_relative(valid_range.start - pos as i64)?;
+        let mut bytes = reader.by_ref().take(valid_range.length);
+        io::copy(&mut bytes, &mut writer)?;
+        pos += valid_range.length;
     }
 
     writer.flush()?;
@@ -40,12 +40,14 @@ mod tests {
         fs::{self},
     };
 
+    use crate::{checker::check_file, csv_details::ByteRange};
+
     use super::*;
 
     fn rows_with_valid(path: impl AsRef<Path>) -> (CSVDetails, impl AsRef<Path>) {
         fs::write(&path, "a,b\ninvalid\n\"\"\"quoted\"\"\",row").unwrap();
         let mut csv_details = CSVDetails::new();
-        csv_details.valid_rows = HashSet::from_iter(vec![0, 2]);
+        csv_details.valid_byte_ranges = vec![ByteRange::new(0, 3), ByteRange::new(12, 15)];
 
         (csv_details, path)
     }
@@ -56,7 +58,7 @@ mod tests {
         let (csv_details, path) = rows_with_valid(dir.path().join("test_save_valid_file_base.csv"));
         let out_path = dir.path().join("test_save_valid_file.csv");
 
-        save_valid_file(path, &csv_details, ',', "utf-8", &out_path).unwrap();
+        save_valid_file(path, &csv_details, &out_path).unwrap();
 
         let file = fs::read_to_string(out_path).unwrap();
 
@@ -69,7 +71,7 @@ mod tests {
         let (csv_details, path) = rows_with_valid(dir.path().join("create_parent_dir.csv"));
         let out_path = dir.path().join("parent").join("child.csv");
 
-        save_valid_file(path, &csv_details, ',', "utf-8", &out_path).unwrap();
+        save_valid_file(path, &csv_details, &out_path).unwrap();
 
         let file = fs::read_to_string(out_path).unwrap();
 

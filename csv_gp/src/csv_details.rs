@@ -1,5 +1,17 @@
 use std::collections::HashSet;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ByteRange {
+    pub start: i64,
+    pub length: u64,
+}
+
+impl ByteRange {
+    pub fn new(start: i64, length: u64) -> Self {
+        Self { start, length }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct CSVDetails {
     /// Number of non-blank rows (including the header) in the file
@@ -33,6 +45,8 @@ pub struct CSVDetails {
     pub blank_rows: Vec<usize>,
     /// Set of all row numbers that are valid in the file
     pub valid_rows: HashSet<usize>,
+    /// Ordered list of valid byte ranges
+    pub valid_byte_ranges: Vec<ByteRange>,
 }
 
 impl CSVDetails {
