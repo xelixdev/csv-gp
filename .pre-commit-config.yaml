@@ -1,13 +1,13 @@
 repos:
 - repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: 'v0.6.5'
+  rev: 'v0.12.0'
   hooks:
     - id: ruff
       args: [ "--fix" ]
     - id: ruff-format
 
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: "v4.6.0"
+  rev: "v5.0.0"
   hooks:
   - id: trailing-whitespace
   - id: check-ast
@@ -29,7 +29,7 @@ repos:
     - id: clippy
       args: ["--all-targets", "--", "-D", "warnings"]
 - repo: https://github.com/trufflesecurity/trufflehog.git
-  rev: "v3.84.2"
+  rev: "v3.89.2"
   hooks:
   - id: trufflehog
     name: TruffleHog
