@@ -116,6 +116,7 @@ impl From<CSVError> for PyCSVError {
 }
 
 #[pyfunction]
+#[pyo3(signature = (path, delimiter, encoding, valid_rows_output_path=None))]
 fn check_file(
     path: String,
     delimiter: char,
@@ -149,10 +150,10 @@ fn get_rows(
 }
 
 #[pymodule]
-fn csv_gp(py: Python, m: &PyModule) -> PyResult<()> {
+fn csv_gp(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(check_file, m)?)?;
     m.add_function(wrap_pyfunction!(get_rows, m)?)?;
     m.add_class::<PyCSVDetails>()?;
-    m.add("UnknownEncoding", py.get_type::<PyUnknownEncoding>())?;
+    m.add("UnknownEncoding", m.py().get_type::<PyUnknownEncoding>())?;
     Ok(())
 }
