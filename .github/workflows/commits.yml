@@ -1,7 +1,0 @@
-name: "Check Commits"
-on:
-  pull_request:
-
-jobs:
-  check_commits:
-    uses: xelixdev/.github/.github/workflows/commits.yml@main
