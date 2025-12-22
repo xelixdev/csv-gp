@@ -68,7 +68,9 @@ impl CSVDetails {
 
         results += &format!(
             "There are {} ({} of which are valid) rows in the file (including header), with {} columns (according to the header).\n",
-            self.row_count, self.valid_rows.len(), self.column_count
+            self.row_count,
+            self.valid_rows.len(),
+            self.column_count
         );
 
         if !self.too_few_columns.is_empty() || !self.too_many_columns.is_empty() {
@@ -113,7 +115,8 @@ impl CSVDetails {
         if !self.quoted_quote.is_empty() {
             results += &format!(
                 "There are {} lines with correctly quoted quote, out of that {} are absolutely correct.\n",
-                self.quoted_quote.len(), self.quoted_quote_correctly.len()
+                self.quoted_quote.len(),
+                self.quoted_quote_correctly.len()
             );
         } else {
             results += "There are no rows with correctly quoted quote.\n";
