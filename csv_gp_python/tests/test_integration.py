@@ -1,8 +1,9 @@
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-import csv_gp
 import pytest
+
+import csv_gp
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
