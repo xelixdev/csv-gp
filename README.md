@@ -54,7 +54,7 @@ The get_rows once again takes a path to file, the delimiter and the encoding and
 
 ## Releasing a new version of the Python lib
 
-1. Update version numbers in `csv_gp_python/Cargo.toml` and `csv_gp_python/pyproject.toml`
+1. Update version numbers in `csv_gp_python/Cargo.toml`, `csv_go/Cargo.toml`, and `csv_gp_python/pyproject.toml`
 2. Run `cargo check` to update the lock files with new versions
 3. Merge this change into main
 4. Create a new release on GitHub, creating a tag in the form `vX.Y.Z`
