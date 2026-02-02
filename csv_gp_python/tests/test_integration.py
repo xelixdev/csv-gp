@@ -159,3 +159,14 @@ def test_incorrect_quote():
     assert result.column_count_per_line == [3, 3, 2, 1]
     assert result.valid_rows == {0}
     assert not result.header_messed_up
+
+
+def test_unclosed_quote_with_pipe():
+    """Test that files with unclosed quotes are handled correctly."""
+    result = csv_gp.check_file(str(FIXTURES / "unclosed_quote.csv"), "|", encoding="utf-8")
+
+    assert result
+    assert result.row_count == 2  # Header + merged row
+    assert result.column_count == 3
+    assert result.incorrect_cell_quote == [1]
+    assert result.header_messed_up  # Merged row has wrong column count
