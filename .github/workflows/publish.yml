@@ -24,7 +24,7 @@ jobs:
           command: build
           args: --release -m csv_gp_python/Cargo.toml --sdist --out dist
           manylinux: auto
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           path: ./dist/*
   upload_pypi:
